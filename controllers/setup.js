@@ -13,7 +13,6 @@ const AWS = require('aws-sdk')
 
 exports.setup_serverless_status = function(req, res, next) {
 
-
 }
 
 
@@ -57,17 +56,15 @@ exports.setup_serverless_complete = function(req, res, next) {
 
 
 // Send Serverless behavior settings in JSON, e.g.
-
-let settings = { 
-	replace_original:
-	delete_original: true,
+// replace_original, delete_original
+let settings = {
+	"replace_original"
 }
 
-exports.send_settings = function(req, res, next) {
+exports.get_settings = function(req, res, next) {
 
 }
 
-
-exports.update_settings = function(req, res, next) {
+exports.set_settings = function(req, res, next) {
 
 }
