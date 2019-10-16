@@ -36,7 +36,7 @@ const jwt_secret = config.jwt_secret;
  4 - Uninstall Complete -> Going back to 0 Install Not Started.
  */
 
-const jwtTokenData = function() {
+const jwtTokenData = function(req, res, next) {
 	const token = req.header('Authorization').replace('Bearer', '').trim();
 	// TODO: Call this async, e.g. by passing a callback, then wrapping in promise.
 	const decoded = jwt.verify(token, jwt_secret);
@@ -48,7 +48,7 @@ const jwtTokenData = function() {
 exports.query_setup_state = function(req, res, next) {
 
 	// Verify JWT token:
-	let user_data = jwtTokenData();
+	let user_data = jwtTokenData(req, res, next);
 
 	console.log("Controller called\n");
 	res.status(200).send({ state: 0, user: user_data, msg: "Install Not Started."})
