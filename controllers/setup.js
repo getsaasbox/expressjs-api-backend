@@ -50,6 +50,7 @@ exports.query_setup_state = function(req, res, next) {
 	// Verify JWT token:
 	let user_data = jwtTokenData(req.body.token);
 
+	console.log("Controller called\n");
 	res.status(200).send({ state: 0, user: user_data, msg: "Install Not Started."})
 }
 
