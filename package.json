@@ -6,13 +6,16 @@
     "start": "if [[ $NODE_ENV == 'production' ]]; then node ./bin/www; else nodemon ./bin/www; fi"
   },
   "dependencies": {
+    "aws-sdk": "^2.550.0",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
     "express": "~4.16.1",
     "http-errors": "~1.6.3",
+    "jsonwebtoken": "^8.5.1",
     "morgan": "~1.9.1",
     "nodemon": "^1.19.3",
     "pug": "2.0.0-beta11",
+    "request": "^2.88.0",
     "request-promise": "^4.2.4"
   }
 }
