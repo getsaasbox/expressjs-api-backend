@@ -48,15 +48,14 @@ const jwtTokenData = function(req, res, next) {
 exports.query_setup_state = function(req, res, next) {
 
 	// Verify JWT token:
-	let user_data = jwtTokenData(req, res, next);
+	let user_info = jwtTokenData(req, res, next);
 
 	console.log("Controller called\n");
-	res.status(200).send({ state: 0, user: user_data, msg: "Install Not Started."})
+	res.status(200).send({ state: 0, user: user_info, msg: "Install Not Started."})
 }
 
 
 exports.setup_serverless_complete = function(req, res, next) {
-
 	// Fetch Customer Account ID, Access Key ID, and Secret
 
 	// Query Assumed Role Exists
@@ -94,15 +93,157 @@ exports.setup_serverless_complete = function(req, res, next) {
 }
 
 
-// Send Serverless behavior settings in JSON, e.g.
+const send_setup_errors = function(req, res, next, errors) {
+	res.status(200).send({ errors });
+}
 
-/* Delete original, replace original, and so on and so forth */
+const validate_setup = function(req, res, next) {
+	let errors = {}
 
-exports.show_settings = function(req, res, next) {
+	if (!req.body.accessKeyId) {
+		errors.accessKeyId = "Invalid or empty Access Key ID"
+	}
+	if (!req.body.accessKeySecret) {
+		errors.accessKeySecret = "Invalid or empty Access Key Secret"
+	}
+	if (!req.body.accountId) {
+		errors.accountId = "Invalid or empty Root Account ID"
+	}
+	if (!req.body.s3BucketName) {
+		errors.s3BucketName = "Invalid or empty S3 Bucket Name"
+	}
+	return errors;
+}
 
+
+/** Create Assumed Role **/
+const queryAssumedRoleExists = function(req, res, next) {
 
 }
 
-exports.set_settings = function(req, res, next) {
+const createAssumedRole = function(req, res, next) {
+	let errors = {}
+	// Call AWS to create assumed role.
+	updateStatus({ status: 1, msg: "Assumed Role Created."});
+	return 0;
+}
+
+const queryCreateAssumedRole = function(req, res, next) {
+
+	if (queryAssumedRoleExists(req, res, next)) {
+		return 0;
+	} else {
+		return createAssumedRole(req, res, next);
+	}
+}
+
+const queryTrustPolicyExists = function(req, res, next) {
 
 }
+
+/** Create Trust Policy **/
+const createTrustPolicy = function(req, res, next) {
+	let errors = {}
+	// Call AWS to create assumed role.
+
+	updateStatus({ status: 1, msg: "Trust Policy Created"});
+	return 0;
+}
+
+const queryCreateTrustPolicy = function(req, res, next) {
+
+	if (queryTrustPolicyExists(req, res, next)) {
+		return 0;
+	} else {
+		return createTrustPolicy(req, res, next);
+	}
+}
+
+/** Attach Lambda Policy **/
+const queryLambdaPolicyAttached = function(req, res, next) {
+
+}
+
+/** Lambda Policy **/
+const attachLambdaPolicy = function(req, res, next) {
+	let errors = {}
+	// Call AWS to create assumed role.
+
+	updateStatus({ status: 1, msg: "Lambda Policy Attached."});
+	return 0;
+}
+
+const queryAttachLambdaPolicy = function(req, res, next) {
+
+	if (queryLambdaPolicyExists(req, res, next)) {
+		return 0;
+	} else {
+		return attachLambdaPolicy(req, res, next);
+	}
+}
+
+/** Set up S3 bucket to Lambda notification **/
+const queryObjectNotifyEventExists = function(req, res, next) {
+
+}
+
+/** Lambda Policy **/
+const createObjectNotifyEvent = function(req, res, next) {
+	let errors = {}
+	// Call AWS to create assumed role.
+
+	updateStatus({ status: 12, msg: "S3 Object Create Notify Event Created"});
+	return 0;
+}
+
+const queryCreateObjectNotifyEvent = function(req, res, next) {
+
+	if (queryObjectNotifyEventExists(req, res, next)) {
+		return 0;
+	} else {
+		return createObjectNotifyEvent(req, res, next);
+	}
+}
+
+exports.submit_setup = function(req, res, next) {
+	let errors = validate_setup(req, res, next);
+
+	if (!isEmpty(errors)) {
+		send_setup_errors(req, res, next, errors)
+	} else {
+		let aws_credentials = {
+			accessKeyId: req.body.accessKeyId,
+			accessKeySecret: req.body.accessKeySecret,
+			accountId: req.body.accountId,
+			s3BucketName: req.body.s3BucketName
+		};
+		req.aws_creds = aws_credentials;
+
+		// TODO: Save credentials / Entry point with saved credentials.
+		// TODO: Check S3 bucket exists.
+		// pre_install_setup()
+
+		errors = queryCreateAssumedRole(req, res, next);
+		if (errors) {
+			send_setup_errors(req, res, next, errors)
+		}
+
+		errors = queryCreateTrustPolicy(req, res, next);
+		if (errors) {
+			send_setup_errors(req, res, next, errors)
+		}
+		errors = queryAttachLambdaPolicy(req, res, next);
+		if (errors) {
+			send_setup_errors(req, res, next, errors)
+		}
+		errors = queryCreateObjectNotifyEvent(req, res, next);
+		if (errors) {
+			send_setup_errors(req, res, next, errors)
+		}
+	}
+}
+
+exports.uninstall_setup = function(req, res, next) {
+	
+}
+
