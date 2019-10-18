@@ -298,7 +298,7 @@ const setUserAwsCreds = function(req, res, next, user) {
 		s3BucketName: req.aws_creds.s3BucketName
 		//install_status_code: 0,
 		//install_status_msg: "Install Not Started"
-	})
+	}, { merge: true })
 }
 
 exports.submit_setup = function(req, res, next) {
