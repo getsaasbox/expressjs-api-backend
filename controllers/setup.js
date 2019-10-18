@@ -312,6 +312,7 @@ exports.submit_setup = function(req, res, next) {
 	} else {
 		return getOrCreateNewUserDoc(req, res, next, user_info).then(userRef => {
 			return setUserAwsCreds(req, res, next, userRef).then(user => {
+				res.status(200).send({ msg: "Success"});
 				/*
 				// TODO: Save credentials / Entry point with saved credentials.
 				// TODO: Check S3 bucket exists.
