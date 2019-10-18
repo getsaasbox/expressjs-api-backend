@@ -104,7 +104,7 @@ const getOrCreateNewUserDoc = function(req, res, next, user_info) {
 				return userRef;
 			});
 		} else {
-			return user
+			return db.collection('users').doc(user_info.id)
 		}
 	})
 }
@@ -312,9 +312,9 @@ exports.submit_setup = function(req, res, next) {
 	if (!isEmpty(errors)) {
 		send_setup_errors(req, res, next, errors)
 	} else {
-		return getOrCreateNewUserDoc(req, res, next, user_info).then(user => {
+		return getOrCreateNewUserDoc(req, res, next, user_info).then(userRef => {
 			console.log("aws_creds:", req.aws_creds);
-			return setUserAwsCreds(req, res, next, user).then(user => {
+			return setUserAwsCreds(req, res, next, userRef).then(user => {
 				/*
 				// TODO: Save credentials / Entry point with saved credentials.
 				// TODO: Check S3 bucket exists.
