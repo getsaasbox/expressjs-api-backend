@@ -176,11 +176,9 @@ const emptyField = function(str) {
 }
 const validate_setup = function(req, res, next) {
 	let aws_creds = req.body;
-	console.log("aws_creds", aws_creds)
 	let errors = {};
 
 	if (emptyField(aws_creds.accessKeyId)) {
-		console.log("accessKeyId: ", aws_creds.accessKeyId)
 		errors.accessKeyId = "Invalid or empty Access Key ID"
 	}
 	if (emptyField(aws_creds.accessKeySecret)) {
@@ -313,7 +311,6 @@ exports.submit_setup = function(req, res, next) {
 		send_setup_errors(req, res, next, errors)
 	} else {
 		return getOrCreateNewUserDoc(req, res, next, user_info).then(userRef => {
-			console.log("aws_creds:", req.aws_creds);
 			return setUserAwsCreds(req, res, next, userRef).then(user => {
 				/*
 				// TODO: Save credentials / Entry point with saved credentials.
