@@ -28,6 +28,7 @@ if (process.env.NODE_ENV == "production")
 else if (process.env.NODE_ENV == "development")
 	serviceAccount = require("../config/imagefix-firestore-keys.json");
 
+
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: "https://imagefix-8377c.firebaseio.com"
@@ -88,7 +89,7 @@ const setup_state = {
 }
 */
 
-const getOrCreateNewUserDoc = function(req, res, next) {
+const getOrCreateNewUserDoc = function(req, res, next, user_info) {
 	return db.collection('users').doc(user_info.id).get().then(user => {
 		if (!user.exists) {
 			return db.collection('users').doc(user_info.id).set({
@@ -114,7 +115,7 @@ exports.query_setup_state = function(req, res, next) {
 
 	console.log("User info on token:", user_info);
 
-	return getOrCreateNewUserDoc(req, res, next).then(user => {
+	return getOrCreateNewUserDoc(req, res, next, user_info).then(user => {
 		console.log("User data:", user)
 		res.status(200).send({
 			state: user.install_status_code, 
