@@ -101,10 +101,10 @@ const getOrCreateNewUserDoc = function(req, res, next, user_info) {
 				install_status_code: 0,
 				install_status_msg: "Install Not Started"
 			}).then(userRef => {
-				return userRef;
+				return userRef.get();
 			});
 		} else {
-			return db.collection('users').doc(user_info.id)
+			return db.collection('users').doc(user_info.id).get();
 		}
 	})
 }
@@ -119,8 +119,6 @@ exports.query_setup_state = function(req, res, next) {
 	console.log("User info on token:", user_info);
 
 	return getOrCreateNewUserDoc(req, res, next, user_info).then(user => {
-
-		console.log("User Get install code:", user.get("install_status_code"))
 		res.status(200).send({
 			state: user.get("install_status_code"), 
 			user: user_info, 
@@ -311,7 +309,7 @@ exports.submit_setup = function(req, res, next) {
 	if (!isEmpty(errors)) {
 		send_setup_errors(req, res, next, errors)
 	} else {
-		return getOrCreateNewUserDoc(req, res, next, user_info).then(userRef => {
+		return db.collection('users').doc(user_info.id).then(userRef => {
 			return setUserAwsCreds(req, res, next, userRef).then(user => {
 				res.status(200).send({ msg: "Success"});
 				/*
