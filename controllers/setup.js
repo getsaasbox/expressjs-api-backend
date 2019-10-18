@@ -172,6 +172,7 @@ const send_setup_errors = function(req, res, next, errors) {
 
 const validate_setup = function(req, res, next) {
 	let aws_creds = JSON.stringify(req.body);
+	console.log("req.body:", req.body)
 	let errors = {};
 
 	if (!aws_creds.accessKeyId) {
