@@ -99,7 +99,7 @@ const getOrCreateNewUserDoc = function(req, res, next, user_info) {
 				install_status_code: 0,
 				install_status_msg: "Install Not Started"
 			}).then(userRef => {
-				return userRef
+				return userRef.get();
 			});
 		} else {
 			return user
