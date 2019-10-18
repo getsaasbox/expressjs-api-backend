@@ -289,8 +289,9 @@ const pre_install_check = function(req, res, next) {
 
 }
 
-const setUserAwsCreds = function(req, res, next, user) {
-	return user.set({
+const setUserAwsCreds = function(req, res, next, user_info) {
+	// Start with fresh reference for 'set'
+	return db.collection('users').doc(user_info.id).set({
 		accessKeyId: req.aws_creds.accessKeyId,
 		accessKeySecret: req.aws_creds.accessKeySecret,
 		accountId: req.aws_creds.accountId,
@@ -309,8 +310,8 @@ exports.submit_setup = function(req, res, next) {
 	if (!isEmpty(errors)) {
 		send_setup_errors(req, res, next, errors)
 	} else {
-		return db.collection('users').doc(user_info.id).then(userRef => {
-			return setUserAwsCreds(req, res, next, userRef).then(user => {
+		return getOrCreateNewUserDoc(req, res, next, user_info).then(user => {
+			return setUserAwsCreds(req, res, next, user_info).then(user => {
 				res.status(200).send({ msg: "Success"});
 				/*
 				// TODO: Save credentials / Entry point with saved credentials.
