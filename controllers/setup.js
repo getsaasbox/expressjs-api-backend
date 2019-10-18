@@ -6,6 +6,7 @@
 const rp = require('request-promise');
 const env = process.env.NODE_ENV || "development";
 
+const { isEmpty } = require('lodash');
 const config = require('../config/cloud.js')[env];
 
 const AWS = require('aws-sdk')
@@ -13,6 +14,35 @@ const AWS = require('aws-sdk')
 const jwt = require('jsonwebtoken');
 
 const jwt_secret = config.jwt_secret;
+
+
+
+const admin = require("firebase-admin");
+
+
+let serviceAccount;
+
+// Cloud firestore key file.
+if (process.env.NODE_ENV == "production")
+	serviceAccount = require("/etc/secrets/imagefix-firestore-keys.json");
+else if (process.env.NODE_ENV == "development")
+	serviceAccount = require("../config/imagefix-firestore-keys.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: "https://imagefix-8377c.firebaseio.com"
+});
+
+const db = admin.firestore();
+
+
+const jwtTokenData = function(req, res, next) {
+	const token = req.header('Authorization').replace('Bearer', '').trim();
+	// TODO: Call this async, e.g. by passing a callback, then wrapping in promise.
+	const decoded = jwt.verify(token, jwt_secret);
+
+	return decoded;
+}
 
 
 /* Setup states:
@@ -36,12 +66,44 @@ const jwt_secret = config.jwt_secret;
  4 - Uninstall Complete -> Going back to 0 Install Not Started.
  */
 
-const jwtTokenData = function(req, res, next) {
-	const token = req.header('Authorization').replace('Bearer', '').trim();
-	// TODO: Call this async, e.g. by passing a callback, then wrapping in promise.
-	const decoded = jwt.verify(token, jwt_secret);
+const setup_state = {
+	"0" : "Install not started.",
+	"1" : "Credentials received, installing.",
+	"2" : "Created Assumed Role.",
+	"3" : "Created Trust Policy.",
+	"4" : "Attached Lambda Policy to server function.",
+	"5" : "Creating Notifications from AWS S3.",
+	"6" : "Install Complete."
+}
 
-	return decoded;
+/* A user document: 
+{
+	accessKeyId: "",
+	accessKeySecret: "",
+	accountId: "",
+	install_status_code: "",
+	install_status_msg" ""
+	quota: "",
+	s3BucketName: ""
+}
+*/
+
+const getOrCreateNewUserDoc = function(req, res, next) {
+	return db.collection('users').doc(user_info.id).get().then(user => {
+		if (!user.exists) {
+			return db.collection('users').doc(user_info.id).set({
+				accessKeyId: "",
+				accessKeySecret: "",
+				accountId: "",
+				install_status_code: 0,
+				install_status_msg = "Install Not Started"
+			}).then(userRef => {
+				return userRef
+			});
+		} else {
+			return user
+		}
+	})
 }
 
 // Query state of setup
@@ -50,8 +112,16 @@ exports.query_setup_state = function(req, res, next) {
 	// Verify JWT token:
 	let user_info = jwtTokenData(req, res, next);
 
-	console.log("Controller called\n");
-	res.status(200).send({ state: 0, user: user_info, msg: "Install Not Started."})
+	console.log("User info on token:", user_info);
+
+	return getOrCreateNewUserDoc(req, res, next).then(user => {
+		console.log("User data:", user)
+		res.status(200).send({
+			state: user.install_status_code, 
+			user: user_info, 
+			msg: user.install_status_msg 
+		})	
+	})
 }
 
 
@@ -196,6 +266,7 @@ const createObjectNotifyEvent = function(req, res, next) {
 	return 0;
 }
 
+
 const queryCreateObjectNotifyEvent = function(req, res, next) {
 
 	if (queryObjectNotifyEventExists(req, res, next)) {
@@ -205,12 +276,18 @@ const queryCreateObjectNotifyEvent = function(req, res, next) {
 	}
 }
 
+// Check if s3 bucket exists
+const pre_install_check = function(req, res, next) {
+
+}
+
 exports.submit_setup = function(req, res, next) {
 	let errors = validate_setup(req, res, next);
 
 	if (!isEmpty(errors)) {
 		send_setup_errors(req, res, next, errors)
 	} else {
+
 		let aws_credentials = {
 			accessKeyId: req.body.accessKeyId,
 			accessKeySecret: req.body.accessKeySecret,
@@ -219,15 +296,20 @@ exports.submit_setup = function(req, res, next) {
 		};
 		req.aws_creds = aws_credentials;
 
+		console.log("aws_creds:", req.aws_creds);
+
+		/*
 		// TODO: Save credentials / Entry point with saved credentials.
 		// TODO: Check S3 bucket exists.
-		// pre_install_setup()
+		errors = pre_install_check(req, res, next);
 
+		if (errors) {
+			send_setup_errors(req, res, next, errors)
+		}
 		errors = queryCreateAssumedRole(req, res, next);
 		if (errors) {
 			send_setup_errors(req, res, next, errors)
 		}
-
 		errors = queryCreateTrustPolicy(req, res, next);
 		if (errors) {
 			send_setup_errors(req, res, next, errors)
@@ -240,6 +322,7 @@ exports.submit_setup = function(req, res, next) {
 		if (errors) {
 			send_setup_errors(req, res, next, errors)
 		}
+		*/
 	}
 }
 
