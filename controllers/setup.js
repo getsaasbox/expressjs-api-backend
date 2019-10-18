@@ -96,6 +96,7 @@ const getOrCreateNewUserDoc = function(req, res, next, user_info) {
 				accessKeyId: "",
 				accessKeySecret: "",
 				accountId: "",
+				s3BucketName: "",
 				install_status_code: 0,
 				install_status_msg: "Install Not Started"
 			}).then(userRef => {
@@ -117,7 +118,7 @@ exports.query_setup_state = function(req, res, next) {
 	console.log("User info on token:", user_info);
 
 	return getOrCreateNewUserDoc(req, res, next, user_info).then(user => {
-		console.log("User data:", user)
+
 		res.status(200).send({
 			state: user.get("install_status_code"), 
 			user: user_info, 
@@ -285,40 +286,56 @@ const pre_install_check = function(req, res, next) {
 
 }
 
+const setUserAwsCreds = function(req, res, next, user) {
+	return user.set({
+		accessKeyId: req.aws_creds.accessKeyId,
+		accessKeySecret: req.aws_creds.accessKeySecret,
+		accountId: req.aws_creds.accountId,
+		s3BucketName: req.aws_creds.s3BucketName
+		//install_status_code: 0,
+		//install_status_msg: "Install Not Started"
+	})
+}
+
 exports.submit_setup = function(req, res, next) {
+
+	let user_info = jwtTokenData(req, res, next);
+
 	let errors = validate_setup(req, res, next);
 
 	if (!isEmpty(errors)) {
 		send_setup_errors(req, res, next, errors)
 	} else {
+		return getOrCreateNewUserDoc(req, res, next, user_info).then(user => {
+			console.log("aws_creds:", req.aws_creds);
+			return setUserAwsCreds(req, res, next, user).then(user => {
+				/*
+				// TODO: Save credentials / Entry point with saved credentials.
+				// TODO: Check S3 bucket exists.
+				errors = pre_install_check(req, res, next);
 
-		console.log("aws_creds:", req.aws_creds);
-
-		/*
-		// TODO: Save credentials / Entry point with saved credentials.
-		// TODO: Check S3 bucket exists.
-		errors = pre_install_check(req, res, next);
-
-		if (errors) {
-			send_setup_errors(req, res, next, errors)
-		}
-		errors = queryCreateAssumedRole(req, res, next);
-		if (errors) {
-			send_setup_errors(req, res, next, errors)
-		}
-		errors = queryCreateTrustPolicy(req, res, next);
-		if (errors) {
-			send_setup_errors(req, res, next, errors)
-		}
-		errors = queryAttachLambdaPolicy(req, res, next);
-		if (errors) {
-			send_setup_errors(req, res, next, errors)
-		}
-		errors = queryCreateObjectNotifyEvent(req, res, next);
-		if (errors) {
-			send_setup_errors(req, res, next, errors)
-		}
-		*/
+				if (errors) {
+					send_setup_errors(req, res, next, errors)
+				}
+				errors = queryCreateAssumedRole(req, res, next);
+				if (errors) {
+					send_setup_errors(req, res, next, errors)
+				}
+				errors = queryCreateTrustPolicy(req, res, next);
+				if (errors) {
+					send_setup_errors(req, res, next, errors)
+				}
+				errors = queryAttachLambdaPolicy(req, res, next);
+				if (errors) {
+					send_setup_errors(req, res, next, errors)
+				}
+				errors = queryCreateObjectNotifyEvent(req, res, next);
+				if (errors) {
+					send_setup_errors(req, res, next, errors)
+				}
+				*/
+			});
+		});
 	}
 }
 
