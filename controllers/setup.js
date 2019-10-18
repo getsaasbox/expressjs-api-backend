@@ -99,7 +99,7 @@ const getOrCreateNewUserDoc = function(req, res, next, user_info) {
 				install_status_code: 0,
 				install_status_msg: "Install Not Started"
 			}).then(userRef => {
-				return userRef.get();
+				return userRef;
 			});
 		} else {
 			return user
@@ -118,9 +118,9 @@ exports.query_setup_state = function(req, res, next) {
 	return getOrCreateNewUserDoc(req, res, next, user_info).then(user => {
 		console.log("User data:", user)
 		res.status(200).send({
-			state: user.install_status_code, 
+			state: user.get("install_status_code"), 
 			user: user_info, 
-			msg: user.install_status_msg 
+			msg: user.get("install_status_msg") 
 		})	
 	})
 }
