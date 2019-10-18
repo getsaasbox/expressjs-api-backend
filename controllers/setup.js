@@ -120,6 +120,7 @@ exports.query_setup_state = function(req, res, next) {
 
 	return getOrCreateNewUserDoc(req, res, next, user_info).then(user => {
 
+		console.log("User Get install code:", user.get("install_status_code"))
 		res.status(200).send({
 			state: user.get("install_status_code"), 
 			user: user_info, 
