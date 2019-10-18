@@ -175,7 +175,7 @@ const emptyField = function(str) {
 	return (!str || 0 === str.length)
 }
 const validate_setup = function(req, res, next) {
-	let aws_creds = JSON.stringify(req.body);
+	let aws_creds = JSON.parse(req.body);
 	console.log("aws_creds", aws_creds)
 	let errors = {};
 
