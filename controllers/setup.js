@@ -171,21 +171,25 @@ const send_setup_errors = function(req, res, next, errors) {
 	res.status(200).send({ errors });
 }
 
+const emptyField = function(str) {
+	return (!str || 0 === str.length)
+}
 const validate_setup = function(req, res, next) {
 	let aws_creds = JSON.stringify(req.body);
 	console.log("aws_creds", aws_creds)
 	let errors = {};
 
-	if (validator.isEmpty(aws_creds.accessKeyId)) {
+	if (emptyField(aws_creds.accessKeyId)) {
+		console.log("accessKeyId: ", aws_creds.accessKeyId)
 		errors.accessKeyId = "Invalid or empty Access Key ID"
 	}
-	if (validator.isEmpty(aws_creds.accessKeySecret)) {
+	if (emptyField(aws_creds.accessKeySecret)) {
 		errors.accessKeySecret = "Invalid or empty Access Key Secret"
 	}
-	if (validator.isEmpty(aws_creds.accountId)) {
+	if (emptyField(aws_creds.accountId)) {
 		errors.accountId = "Invalid or empty Root Account ID"
 	}
-	if (validator.isEmpty(aws_creds.s3BucketName)) {
+	if (emptyField(aws_creds.s3BucketName)) {
 		errors.s3BucketName = "Invalid or empty S3 Bucket Name"
 	}
 	req.aws_creds = aws_creds;
