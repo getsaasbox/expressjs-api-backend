@@ -7,6 +7,7 @@ const rp = require('request-promise');
 const env = process.env.NODE_ENV || "development";
 
 const { isEmpty } = require('lodash');
+const validator = require('validator');
 const config = require('../config/cloud.js')[env];
 
 const AWS = require('aws-sdk')
@@ -172,19 +173,19 @@ const send_setup_errors = function(req, res, next, errors) {
 
 const validate_setup = function(req, res, next) {
 	let aws_creds = JSON.stringify(req.body);
-	console.log("req.body:", req.body)
+	console.log("aws_creds", aws_creds)
 	let errors = {};
 
-	if (!aws_creds.accessKeyId) {
+	if (validator.isEmpty(aws_creds.accessKeyId)) {
 		errors.accessKeyId = "Invalid or empty Access Key ID"
 	}
-	if (!aws_creds.accessKeySecret) {
+	if (validator.isEmpty(aws_creds.accessKeySecret)) {
 		errors.accessKeySecret = "Invalid or empty Access Key Secret"
 	}
-	if (!aws_creds.accountId) {
+	if (validator.isEmpty(aws_creds.accountId)) {
 		errors.accountId = "Invalid or empty Root Account ID"
 	}
-	if (!aws_creds.s3BucketName) {
+	if (validator.isEmpty(aws_creds.s3BucketName)) {
 		errors.s3BucketName = "Invalid or empty S3 Bucket Name"
 	}
 	req.aws_creds = aws_creds;
