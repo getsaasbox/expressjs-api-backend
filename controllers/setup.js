@@ -108,6 +108,7 @@ const getOrCreateNewUserDoc = function(req, res, next, user_info) {
 }
 
 // Query state of setup
+
 exports.query_setup_state = function(req, res, next) {
 
 	// Verify JWT token:
@@ -169,20 +170,22 @@ const send_setup_errors = function(req, res, next, errors) {
 }
 
 const validate_setup = function(req, res, next) {
-	let errors = {}
+	let aws_creds = JSON.stringify(req.body);
+	let errors = {};
 
-	if (!req.body.accessKeyId) {
+	if (!aws_creds.accessKeyId) {
 		errors.accessKeyId = "Invalid or empty Access Key ID"
 	}
-	if (!req.body.accessKeySecret) {
+	if (!aws_creds.accessKeySecret) {
 		errors.accessKeySecret = "Invalid or empty Access Key Secret"
 	}
-	if (!req.body.accountId) {
+	if (!aws_creds.accountId) {
 		errors.accountId = "Invalid or empty Root Account ID"
 	}
-	if (!req.body.s3BucketName) {
+	if (!aws_creds.s3BucketName) {
 		errors.s3BucketName = "Invalid or empty S3 Bucket Name"
 	}
+	req.aws_creds = aws_creds;
 	return errors;
 }
 
@@ -288,14 +291,6 @@ exports.submit_setup = function(req, res, next) {
 	if (!isEmpty(errors)) {
 		send_setup_errors(req, res, next, errors)
 	} else {
-
-		let aws_credentials = {
-			accessKeyId: req.body.accessKeyId,
-			accessKeySecret: req.body.accessKeySecret,
-			accountId: req.body.accountId,
-			s3BucketName: req.body.s3BucketName
-		};
-		req.aws_creds = aws_credentials;
 
 		console.log("aws_creds:", req.aws_creds);
 
