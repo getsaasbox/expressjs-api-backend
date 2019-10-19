@@ -318,6 +318,7 @@ const setUserAwsCreds = function(req, res, next, user_info) {
 
 exports.submit_setup = function(req, res, next) {
 	let user_info = jwtTokenData(req, res, next);
+
 	let errors = validate_setup(req, res, next);
 
 	if (!isEmpty(errors)) {
@@ -328,7 +329,7 @@ exports.submit_setup = function(req, res, next) {
 				res.status(200).send({ status: user.install_status_code, msg: user.install_status_msg });
 				// TODO: Save credentials / Entry point with saved credentials.
 				// TODO: Check S3 bucket exists.
-				return pre_install_check(req, res, next).then(result => {
+				return pre_install_check(req, res, next, user_info).then(result => {
 					if (errors) {
 						send_setup_errors(req, res, next, errors)
 					}
