@@ -47,37 +47,6 @@ const jwtTokenData = function(req, res, next) {
 }
 
 
-/* Setup states:
- 
- 0 - Install not started,
-
- 1 - Credentials received, installing.
-
- 1.1 Create assumed role
-
- 1.2 Create trust policy
-
- 1.3 Attaching IAM policy to server
-
- 1.4 Enable notifications from S3 bucket
-
- 2 - Install complete, system operational
-
- 3 - Uninstall Starting...
-
- 4 - Uninstall Complete -> Going back to 0 Install Not Started.
- */
-
-const setup_state = {
-	"0" : "Install not started.",
-	"1" : "Credentials received, installing.",
-	"2" : "Created Assumed Role.",
-	"3" : "Created Trust Policy.",
-	"4" : "Attached Lambda Policy to server function.",
-	"5" : "Creating Notifications from AWS S3.",
-	"6" : "Install Complete."
-}
-
 /* A user document: 
 {
 	accessKeyId: "",
@@ -284,9 +253,55 @@ const queryCreateObjectNotifyEvent = function(req, res, next) {
 	}
 }
 
-// Check if s3 bucket exists
-const pre_install_check = function(req, res, next) {
+const s3headBucket_promise = function(bucketName) {
+	let params = {
+		Bucket: bucketName
+	};
+	return new Promise((resolve, reject) => {
+		return s3.headBucket(params, function(err, data) {
+	  		if (err) {
+	  			console.log(err, err.stack);
+	  			reject(err);
+	  		}
+	  		else {
+	  			console.log(data);
+				resolve(data);
+			}
+		});
+	});
+}
 
+const bucketExists = function(req, res, next, user_info) {
+	let s3 = new AWS.S3();
+	return db.collection('users').doc(user_info.id).get("s3BucketName").then(bucket => {
+		return s3headBucket_promise(bucket);
+	});
+}
+
+// Check if s3 bucket exists
+const pre_install_check = function(req, res, next, user_info) {
+	return bucketExists(req, res, next, user_info).then(result => {
+		console.log("Bucket Exists result:", result);
+		
+		// Based on result, if success, move on to next step,
+		// if error, don't move on to next step
+		return db.collection('users').doc(user_info.id).set({
+			install_status_code: 2,
+			install_status_msg: "Pre-install checks complete."
+		});
+	});
+}
+
+const setup_state = {
+	"0" : "Install not started.",
+	"1" : "Credentials Received.",
+	"2" : "Pre-install checks complete.",
+	"3" : "Credentials received, installing.",
+	"4" : "Created Assumed Role.",
+	"5" : "Created Trust Policy.",
+	"6" : "Attached Lambda Policy to server function.",
+	"7" : "Creating Notifications from AWS S3.",
+	"8" : "Install Complete."
 }
 
 const setUserAwsCreds = function(req, res, next, user_info) {
@@ -295,16 +310,14 @@ const setUserAwsCreds = function(req, res, next, user_info) {
 		accessKeyId: req.aws_creds.accessKeyId,
 		accessKeySecret: req.aws_creds.accessKeySecret,
 		accountId: req.aws_creds.accountId,
-		s3BucketName: req.aws_creds.s3BucketName
-		//install_status_code: 0,
-		//install_status_msg: "Install Not Started"
-	}, { merge: true })
+		s3BucketName: req.aws_creds.s3BucketName,
+		install_status_code: 1,
+		install_status_msg: "Credentials received"
+	}, { merge: true });
 }
 
 exports.submit_setup = function(req, res, next) {
-
 	let user_info = jwtTokenData(req, res, next);
-
 	let errors = validate_setup(req, res, next);
 
 	if (!isEmpty(errors)) {
@@ -312,15 +325,15 @@ exports.submit_setup = function(req, res, next) {
 	} else {
 		return getOrCreateNewUserDoc(req, res, next, user_info).then(user => {
 			return setUserAwsCreds(req, res, next, user_info).then(user => {
-				res.status(200).send({ msg: "Success"});
-				/*
+				res.status(200).send({ status: user.install_status_code, msg: user.install_status_msg });
 				// TODO: Save credentials / Entry point with saved credentials.
 				// TODO: Check S3 bucket exists.
-				errors = pre_install_check(req, res, next);
-
-				if (errors) {
-					send_setup_errors(req, res, next, errors)
-				}
+				return pre_install_check(req, res, next).then(result => {
+					if (errors) {
+						send_setup_errors(req, res, next, errors)
+					}
+				});
+				/*
 				errors = queryCreateAssumedRole(req, res, next);
 				if (errors) {
 					send_setup_errors(req, res, next, errors)
