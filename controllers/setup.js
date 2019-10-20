@@ -254,6 +254,7 @@ const queryCreateObjectNotifyEvent = function(req, res, next) {
 }
 
 const s3headBucket_promise = function(bucketName) {
+	let s3 = new AWS.S3();
 	let params = {
 		Bucket: bucketName
 	};
@@ -272,7 +273,6 @@ const s3headBucket_promise = function(bucketName) {
 }
 
 const bucketExists = function(req, res, next, user_info) {
-	let s3 = new AWS.S3();
 	return db.collection('users').doc(user_info.id).get("s3BucketName").then(bucket => {
 		return s3headBucket_promise(bucket);
 	});
