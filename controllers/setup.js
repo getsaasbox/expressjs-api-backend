@@ -17,9 +17,7 @@ const jwt = require('jsonwebtoken');
 const jwt_secret = config.jwt_secret;
 
 
-
 const admin = require("firebase-admin");
-
 
 let serviceAccount;
 
@@ -253,21 +251,28 @@ const queryCreateObjectNotifyEvent = function(req, res, next) {
 	}
 }
 
-const s3headBucket_promise = function(bucketName) {
-	let s3 = new AWS.S3();
-	let params = {
-		Bucket: bucketName
-	};
-	return new Promise((resolve, reject) => {
-		return s3.headBucket(params, function(err, data) {
-	  		if (err) {
-	  			console.log(err, err.stack);
-	  			reject(err);
-	  		}
-	  		else {
-	  			console.log(data);
-				resolve(data);
-			}
+const s3headBucket_promise = function(bucketName, user_info) {
+	return db.collection('users').doc(user_info.id).get().then(userRef => {
+		let s3 = new AWS.S3({
+			accessKeyId: userRef.get('accessKeyId'),
+			secretAccessKey: userRef.get('accessKeySecret')
+		});
+
+		let params = {
+			Bucket: bucketName
+		};
+
+		return new Promise((resolve, reject) => {
+			return s3.headBucket(params, function(err, data) {
+		  		if (err) {
+		  			console.log(err, err.stack);
+		  			reject(err);
+		  		}
+		  		else {
+					console.log(data);
+					resolve(data);
+				}
+			});
 		});
 	});
 }
@@ -276,7 +281,7 @@ const bucketExists = function(req, res, next, user_info) {
 	return db.collection('users').doc(user_info.id).get().then(user => {
 		let bucket = user.get("s3BucketName");
 		console.log("bucket:", bucket)
-		return s3headBucket_promise(bucket);
+		return s3headBucket_promise(bucket, user_info);
 	});
 }
 
@@ -317,6 +322,7 @@ const setUserAwsCreds = function(req, res, next, user_info) {
 		install_status_msg: "Credentials received"
 	}, { merge: true });
 }
+
 
 exports.submit_setup = function(req, res, next) {
 	let user_info = jwtTokenData(req, res, next);
