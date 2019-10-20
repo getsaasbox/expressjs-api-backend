@@ -275,6 +275,7 @@ const s3headBucket_promise = function(bucketName) {
 const bucketExists = function(req, res, next, user_info) {
 	return db.collection('users').doc(user_info.id).get().then(user => {
 		let bucket = user.get("s3BucketName");
+		console.log("bucket:", bucket)
 		return s3headBucket_promise(bucket);
 	});
 }
