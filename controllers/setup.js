@@ -57,6 +57,7 @@ const jwtTokenData = function(req, res, next) {
 }
 */
 
+
 const createNewUserDoc = async function(req, res, next, user_info) {
 	return db.collection('users').doc(user_info.id).get().then(user => {
 		if (!user.exists) {
@@ -78,14 +79,24 @@ const createNewUserDoc = async function(req, res, next, user_info) {
 	});
 }
 
-// Query state of setup
+const createUpdateUserDoc = async function(req, res, next, user_info) {
+	return db.collection('users').doc(user_info.id).set({
+		accessKeyId: req.body.accessKeyId,
+		accessKeySecret: req.body.accessKeySecret,
+		accountId: req.body.accountId,
+		s3BucketName: req.body.s3BucketName
+		}, { merge: true }).then(result => {
+		return 0;
+	}).catch(err => {
+		return { error: "Failed saving user credentials.\n" + err };
+	});
+}
 
+// Query state of setup
 exports.query_setup_state = async function(req, res, next) {
 
 	// Verify JWT token:
 	let user_info = jwtTokenData(req, res, next);
-
-	console.log("User info on token:", user_info);
 
 	let error = await createNewUserDoc(req, res, next, user_info);
 	
@@ -95,9 +106,9 @@ exports.query_setup_state = async function(req, res, next) {
 
 	return db.collection('users').doc(user_info.id).get().then(user => {
 		res.status(200).send({
-		status: user.get("install_status_code"), 
-		user: user_info, 
-		msg: user.get("install_status_msg") 
+			status: user.get("install_status_code"), 
+			user: user_info, 
+			msg: user.get("install_status_msg") 
 		})			
 	});
 }
@@ -242,42 +253,37 @@ const queryCreateObjectNotifyEvent = function(req, res, next) {
 	}
 }
 
-const s3headBucket_promise = function(bucketName, user_info) {
-	return db.collection('users').doc(user_info.id).get().then(userRef => {
-		let s3 = new AWS.S3({
-			accessKeyId: userRef.get('accessKeyId'),
-			secretAccessKey: userRef.get('accessKeySecret')
-		});
+const s3headBucket_promise = function(req, res, next) {
+	let s3 = new AWS.S3({
+		accessKeyId: req.body.accessKeyId,
+		secretAccessKey: req.body.accessKeySecret
+	});
 
-		let params = {
-			Bucket: bucketName
-		};
+	let params = {
+		Bucket: req.body.bucketName
+	};
 
-		return new Promise((resolve, reject) => {
-			return s3.headBucket(params, function(err, data) {
-		  		if (err) {
-		  			console.log(err, err.stack);
-		  			reject(err);
-		  		}
-		  		else {
-					console.log(data);
-					resolve(data);
-				}
-			});
+	return new Promise((resolve, reject) => {
+		return s3.headBucket(params, function(err, data) {
+	  		if (err) {
+	  			console.log(err, err.stack);
+	  			reject(err);
+	  		}
+	  		else {
+				console.log(data);
+				resolve(data);
+			}
 		});
 	});
 }
 
-const bucketExists = function(req, res, next, user_info) {
-	return db.collection('users').doc(user_info.id).get().then(user => {
-		let bucket = user.get("s3BucketName");
-		console.log("bucket:", bucket)
-		return s3headBucket_promise(bucket, user_info).then(success => {
-			return true;
-		}).catch(error => {
-			return false;
-		})
-	});
+
+const bucketExists = function(req, res, next) {
+	return s3headBucket_promise(req, res, next).then(success => {
+		return true;
+	}).catch(error => {
+		return false;
+	})
 }
 
 const update_status = async function (req, res, next, code, msg) {
@@ -285,12 +291,12 @@ const update_status = async function (req, res, next, code, msg) {
 	return db.collection('users').doc(user_info.id).set({
 			install_status_code: code,
 			install_status_msg: msg
-	});
+	}, { merge: true });
 }
 
 // Check if s3 bucket exists
 const pre_install_check = async function(req, res, next) {
-	return bucketExists(req, res, next, req.user_info).then(exists => {
+	return bucketExists(req, res, next, req.body.s3BucketName).then(exists => {
 		if (exists) {
 			return 0
 		} else {
@@ -329,7 +335,7 @@ const validate_setup = async function(req, res, next) {
 	
 	let pre_install_errors = await pre_install_check(req, res, next);
 
-	errors = merge(errors, preinstall_errors);
+	errors = merge(errors, pre_install_errors);
 
 	if (!isEmpty(errors)) {
 		return errors;
@@ -343,56 +349,28 @@ const setup_state = {
 	"0" : "Install not started.",
 	"1" : "Pre-install checks complete.",
 	"2" : "User found or created.",
-	"3" : "Credentials Saved.",
-	"4" : "Created Assumed Role to allow access to S3 bucket.",
-	"5" : "Updated Assumed Role Trust Policy to add Lambda role as a principal.",
-	"6" : "Attached Policy to Lambda to let it switch to Assumed Role.",
-	"7" : "Creating Notifications from AWS S3.",
-	"8" : "Install Complete."
+	"3" : "Created Assumed Role to allow access to S3 bucket.",
+	"4" : "Updated Assumed Role Trust Policy to add Lambda role as a principal.",
+	"5" : "Attached Policy to Lambda to let it switch to Assumed Role.",
+	"6" : "Creating Notifications from AWS S3.",
+	"7" : "Install Complete."
 }
-
-const setUserAwsCreds = async function(req, res, next) {
-	let user_info = req.user_info
-	// Start with fresh reference for 'set'
-	return db.collection('users').doc(user_info.id).set({
-		accessKeyId: req.aws_creds.accessKeyId,
-		accessKeySecret: req.aws_creds.accessKeySecret,
-		accountId: req.aws_creds.accountId,
-		s3BucketName: req.aws_creds.s3BucketName,
-	}, { merge: true }).then(result => {
-		return 0
-	}).catch(err => {
-		return { error: "Failed saving user credentials.\n" + err };
-	});
-}
-
 
 exports.submit_setup = async function(req, res, next) {
 	let user_info = jwtTokenData(req, res, next);
 	req.user_info = user_info;
 
 	let errors = await validate_setup(req, res, next);
-	
-	
-	
-	console.log("validate setup, errors:", errors)
 	if (!isEmpty(errors)) {
 		send_setup_errors(req, res, next, errors)
 	}
 	await update_status(req, res, next, 1, "Pre-install checks complete.");
 
-	let error = await createNewUserDoc(req, res, next, user_info)
+	let error = await createUpdateUserDoc(req, res, next, user_info)
 	if (error) {
 		send_setup_errors(req, res, next, error);
 	}
-	await updateStatus(req, res, next, 2, "User found or created.");
-
-	// TODO: Entry point with saved credentials.
-	error = await setUserAwsCreds(req, res, next, user_info);
-	if (error) {
-		send_setup_errors(req, res, next, error);
-	}
-	await updateStatus(req, res, next, 3, "Credentials saved.");
+	await updateStatus(req, res, next, 2, "User created/updated.");
 
 	error = await queryCreateAssumedRole(req, res, next);
 	if (error) {
