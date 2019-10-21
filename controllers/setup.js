@@ -92,7 +92,7 @@ exports.query_setup_state = async function(req, res, next) {
 	if (error) {
 		send_setup_errors(req, res, next, error);
 	}
-	
+
 	return db.collection('users').doc(user_info.id).get().then(user => {
 		res.status(200).send({
 		status: user.get("install_status_code"), 
@@ -386,7 +386,7 @@ exports.submit_setup = async function(req, res, next) {
 	await updateStatus(req, res, next, 2, "User found or created.");
 
 	// TODO: Entry point with saved credentials.
-	let error = await setUserAwsCreds(req, res, next, user_info);
+	error = await setUserAwsCreds(req, res, next, user_info);
 	if (error) {
 		send_setup_errors(req, res, next, error);
 	}
