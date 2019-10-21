@@ -131,7 +131,7 @@ exports.createIAMRole = function(req, res, next) {
 	let user_info = req.user_info;
 	return db.collection('users').doc(user_info.id).get().then(userRef => {
 		let params = {
-		 	AssumeRolePolicyDocument: JSON.stringify(getIAMPolicyGrantS3Access(userRef.get("s3BucketName")));
+		 	AssumeRolePolicyDocument: JSON.stringify(getIAMPolicyGrantS3Access(userRef.get("s3BucketName"))),
 		 	RoleName: 'ImageFix-Lambda-S3-Accessor', /* required */
 		 	Description: 'Executes Image optimizations on your S3 buckets',
 		 	MaxSessionDuration: '86400',

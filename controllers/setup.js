@@ -367,6 +367,7 @@ exports.submit_setup = async function(req, res, next) {
 	
 	req.user_info = user_info;
 	
+	console.log("validate setup, errors:", errors)
 	if (!isEmpty(errors)) {
 		send_setup_errors(req, res, next, errors)
 	}
