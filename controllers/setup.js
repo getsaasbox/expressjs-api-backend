@@ -294,17 +294,16 @@ const update_status = async function (req, res, next, code, msg) {
 	}, { merge: true });
 }
 
+
 // Check if s3 bucket exists
 const pre_install_check = async function(req, res, next) {
 	return bucketExists(req, res, next, req.body.s3BucketName).then(exists => {
-		if (exists) {
-			return 0
-		} else {
-			let errors = {};
-			errors.bucketNotExists = "Bucket does not exist. Please enter the name of an existing bucket.";
-			return errors;
-		}
-	});
+		return {};
+	}).catch(err => {
+		let errors = {};
+		errors.bucketNotExists = "Bucket does not exist. Please enter the name of an existing bucket.";
+		return errors;
+	})
 }
 
 
