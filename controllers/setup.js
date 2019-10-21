@@ -80,20 +80,26 @@ const createNewUserDoc = async function(req, res, next, user_info) {
 
 // Query state of setup
 
-exports.query_setup_state = function(req, res, next) {
+exports.query_setup_state = async function(req, res, next) {
 
 	// Verify JWT token:
 	let user_info = jwtTokenData(req, res, next);
 
 	console.log("User info on token:", user_info);
 
-	return getOrCreateNewUserDoc(req, res, next, user_info).then(user => {
+	let error = await createNewUserDoc(req, res, next, user_info);
+	
+	if (error) {
+		send_setup_errors(req, res, next, error);
+	}
+	
+	return db.collection('users').doc(user_info.id).get().then(user => {
 		res.status(200).send({
-			status: user.get("install_status_code"), 
-			user: user_info, 
-			msg: user.get("install_status_msg") 
-		})	
-	})
+		status: user.get("install_status_code"), 
+		user: user_info, 
+		msg: user.get("install_status_msg") 
+		})			
+	});
 }
 
 
