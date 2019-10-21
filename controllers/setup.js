@@ -260,7 +260,7 @@ const s3headBucket_promise = function(req, res, next) {
 	});
 
 	let params = {
-		Bucket: req.body.bucketName
+		Bucket: req.body.s3BucketName
 	};
 
 	return new Promise((resolve, reject) => {
