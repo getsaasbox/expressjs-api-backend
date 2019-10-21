@@ -369,9 +369,11 @@ const setUserAwsCreds = async function(req, res, next) {
 
 exports.submit_setup = async function(req, res, next) {
 	let user_info = jwtTokenData(req, res, next);
+	req.user_info = user_info;
+
 	let errors = await validate_setup(req, res, next);
 	
-	req.user_info = user_info;
+	
 	
 	console.log("validate setup, errors:", errors)
 	if (!isEmpty(errors)) {
