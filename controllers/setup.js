@@ -369,14 +369,15 @@ exports.submit_setup = async function(req, res, next) {
 	if (error) {
 		send_setup_errors(req, res, next, error);
 	}
-	await updateStatus(req, res, next, 2, "User created/updated.");
+	await update_status(req, res, next, 2, "User created/updated.");
 
 	error = await queryCreateAssumedRole(req, res, next);
 	if (error) {
 		send_setup_errors(req, res, next, error);
 	}
-	await updateStatus(req, res, next, 5, "Assumed Role Created. Trust policy updated.");
+	await update_status(req, res, next, 3, "Assumed Role Created. Trust policy updated.");
 
+	res.status(200).send({ "Success creating Assumed Role / Updating trust policy." })
 	/*
 	errors = queryAttachIAMPolicyLetLambdaSwitchToAssumedRole(req, res, next);
 	if (errors) {
