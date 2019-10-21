@@ -6,7 +6,7 @@
 const rp = require('request-promise');
 const env = process.env.NODE_ENV || "development";
 
-const { isEmpty } = require('lodash');
+const { isEmpty, merge } = require('lodash');
 const validator = require('validator');
 const config = require('../config/cloud.js')[env];
 
@@ -57,7 +57,7 @@ const jwtTokenData = function(req, res, next) {
 }
 */
 
-const getOrCreateNewUserDoc = function(req, res, next, user_info) {
+const createNewUserDoc = async function(req, res, next, user_info) {
 	return db.collection('users').doc(user_info.id).get().then(user => {
 		if (!user.exists) {
 			return db.collection('users').doc(user_info.id).set({
@@ -68,12 +68,14 @@ const getOrCreateNewUserDoc = function(req, res, next, user_info) {
 				install_status_code: 0,
 				install_status_msg: "Install Not Started"
 			}).then(userRef => {
-				return userRef.get();
+				return 0;
+			}).catch(err => {
+				return { error: "Failed to create user in Firestore.\n" + err }
 			});
 		} else {
-			return db.collection('users').doc(user_info.id).get();
+			return 0;
 		}
-	})
+	});
 }
 
 // Query state of setup
@@ -133,33 +135,6 @@ exports.setup_serverless_complete = function(req, res, next) {
 }
 
 
-const send_setup_errors = function(req, res, next, errors) {
-	res.status(200).send({ errors });
-}
-
-const emptyField = function(str) {
-	return (!str || 0 === str.length)
-}
-const validate_setup = function(req, res, next) {
-	let aws_creds = req.body;
-	let errors = {};
-
-	if (emptyField(aws_creds.accessKeyId)) {
-		errors.accessKeyId = "Invalid or empty Access Key ID"
-	}
-	if (emptyField(aws_creds.accessKeySecret)) {
-		errors.accessKeySecret = "Invalid or empty Access Key Secret"
-	}
-	if (emptyField(aws_creds.accountId)) {
-		errors.accountId = "Invalid or empty Root Account ID"
-	}
-	if (emptyField(aws_creds.s3BucketName)) {
-		errors.s3BucketName = "Invalid or empty S3 Bucket Name"
-	}
-	req.aws_creds = aws_creds;
-	return errors;
-}
-
 
 /** Create Assumed Role **/
 const queryAssumedRoleExists = function(req, res, next) {
@@ -173,13 +148,23 @@ const createAssumedRole = function(req, res, next) {
 	return 0;
 }
 
-const queryCreateAssumedRole = function(req, res, next) {
+const { createIAMRole, queryIAMRoleExists} = require("./awsCreateRole");
 
-	if (queryAssumedRoleExists(req, res, next)) {
+const queryCreateAssumedRole = async function(req, res, next) {
+	return queryIAMRoleExists(req, res, next).then(result => {
 		return 0;
-	} else {
-		return createAssumedRole(req, res, next);
-	}
+	}).catch(err => {
+		return createIAMRole(req, res, next).then(result => {
+			return updateIAMRoleTrustPolicy(req, res, next).then(result => {
+				return 0
+			}).catch(err => {
+				return { error: "Failed to update IAM Trust policy" + err };
+			})
+			return 0;
+		}).catch(err => {
+			return { error: "Failed to create IAM role:" + err }
+		})
+	});
 }
 
 const queryTrustPolicyExists = function(req, res, next) {
@@ -281,88 +266,141 @@ const bucketExists = function(req, res, next, user_info) {
 	return db.collection('users').doc(user_info.id).get().then(user => {
 		let bucket = user.get("s3BucketName");
 		console.log("bucket:", bucket)
-		return s3headBucket_promise(bucket, user_info);
+		return s3headBucket_promise(bucket, user_info).then(success => {
+			return true;
+		}).catch(error => {
+			return false;
+		})
+	});
+}
+
+const update_status = async function (req, res, next, code, msg) {
+	let user_info = req.user_info;
+	return db.collection('users').doc(user_info.id).set({
+			install_status_code: code,
+			install_status_msg: msg
 	});
 }
 
 // Check if s3 bucket exists
-const pre_install_check = function(req, res, next, user_info) {
-	return bucketExists(req, res, next, user_info).then(result => {
-		console.log("Bucket Exists result:", result);
-		
-		// Based on result, if success, move on to next step,
-		// if error, don't move on to next step
-		return db.collection('users').doc(user_info.id).set({
-			install_status_code: 2,
-			install_status_msg: "Pre-install checks complete."
-		});
+const pre_install_check = async function(req, res, next) {
+	return bucketExists(req, res, next, req.user_info).then(exists => {
+		if (exists) {
+			return 0
+		} else {
+			let errors = {};
+			errors.bucketNotExists = "Bucket does not exist. Please enter the name of an existing bucket.";
+			return errors;
+		}
 	});
 }
 
+
+const send_setup_errors = function(req, res, next, errors) {
+	res.status(200).send({ errors });
+}
+
+const emptyField = function(str) {
+	return (!str || 0 === str.length)
+}
+
+const validate_setup = async function(req, res, next) {
+	let aws_creds = req.body;
+	let errors = {};
+
+	if (emptyField(aws_creds.accessKeyId)) {
+		errors.accessKeyId = "Invalid or empty Access Key ID"
+	}
+	if (emptyField(aws_creds.accessKeySecret)) {
+		errors.accessKeySecret = "Invalid or empty Access Key Secret"
+	}
+	if (emptyField(aws_creds.accountId)) {
+		errors.accountId = "Invalid or empty Root Account ID"
+	}
+	if (emptyField(aws_creds.s3BucketName)) {
+		errors.s3BucketName = "Invalid or empty S3 Bucket Name"
+	}
+	
+	let pre_install_errors = await pre_install_check(req, res, next);
+
+	errors = merge(errors, preinstall_errors);
+
+	if (!isEmpty(errors)) {
+		return errors;
+	} else {
+		return 0;
+	}
+}
+
+
 const setup_state = {
 	"0" : "Install not started.",
-	"1" : "Credentials Received.",
-	"2" : "Pre-install checks complete.",
-	"3" : "Credentials received, installing.",
-	"4" : "Created Assumed Role.",
-	"5" : "Created Trust Policy.",
-	"6" : "Attached Lambda Policy to server function.",
+	"1" : "Pre-install checks complete.",
+	"2" : "User found or created.",
+	"3" : "Credentials Saved.",
+	"4" : "Created Assumed Role to allow access to S3 bucket.",
+	"5" : "Updated Assumed Role Trust Policy to add Lambda role as a principal.",
+	"6" : "Attached Policy to Lambda to let it switch to Assumed Role.",
 	"7" : "Creating Notifications from AWS S3.",
 	"8" : "Install Complete."
 }
 
-const setUserAwsCreds = function(req, res, next, user_info) {
+const setUserAwsCreds = async function(req, res, next) {
+	let user_info = req.user_info
 	// Start with fresh reference for 'set'
 	return db.collection('users').doc(user_info.id).set({
 		accessKeyId: req.aws_creds.accessKeyId,
 		accessKeySecret: req.aws_creds.accessKeySecret,
 		accountId: req.aws_creds.accountId,
 		s3BucketName: req.aws_creds.s3BucketName,
-		install_status_code: 1,
-		install_status_msg: "Credentials received"
-	}, { merge: true });
+	}, { merge: true }).then(result => {
+		return 0
+	}).catch(err => {
+		return { error: "Failed saving user credentials.\n" + err };
+	});
 }
 
 
-exports.submit_setup = function(req, res, next) {
+exports.submit_setup = async function(req, res, next) {
 	let user_info = jwtTokenData(req, res, next);
-
-	let errors = validate_setup(req, res, next);
-
+	let errors = await validate_setup(req, res, next);
+	
+	req.user_info = user_info;
+	
 	if (!isEmpty(errors)) {
 		send_setup_errors(req, res, next, errors)
-	} else {
-		return getOrCreateNewUserDoc(req, res, next, user_info).then(user => {
-			return setUserAwsCreds(req, res, next, user_info).then(user => {
-				res.status(200).send({ status: user.install_status_code, msg: user.install_status_msg });
-				// TODO: Save credentials / Entry point with saved credentials.
-				// TODO: Check S3 bucket exists.
-				return pre_install_check(req, res, next, user_info).then(result => {
-					if (errors) {
-						send_setup_errors(req, res, next, errors)
-					}
-				});
-				/*
-				errors = queryCreateAssumedRole(req, res, next);
-				if (errors) {
-					send_setup_errors(req, res, next, errors)
-				}
-				errors = queryCreateTrustPolicy(req, res, next);
-				if (errors) {
-					send_setup_errors(req, res, next, errors)
-				}
-				errors = queryAttachLambdaPolicy(req, res, next);
-				if (errors) {
-					send_setup_errors(req, res, next, errors)
-				}
-				errors = queryCreateObjectNotifyEvent(req, res, next);
-				if (errors) {
-					send_setup_errors(req, res, next, errors)
-				}
-				*/
-			});
-		});
 	}
+	await update_status(req, res, next, 1, "Pre-install checks complete.");
+
+	let error = await createNewUserDoc(req, res, next, user_info)
+	if (error) {
+		send_setup_errors(req, res, next, error);
+	}
+	await updateStatus(req, res, next, 2, "User found or created.");
+
+	// TODO: Entry point with saved credentials.
+	let error = await setUserAwsCreds(req, res, next, user_info);
+	if (error) {
+		send_setup_errors(req, res, next, error);
+	}
+	await updateStatus(req, res, next, 3, "Credentials saved.");
+
+	error = await queryCreateAssumedRole(req, res, next);
+	if (error) {
+		send_setup_errors(req, res, next, error);
+	}
+	await updateStatus(req, res, next, 5, "Assumed Role Created. Trust policy updated.");
+
+	/*
+	errors = queryAttachIAMPolicyLetLambdaSwitchToAssumedRole(req, res, next);
+	if (errors) {
+		send_setup_errors(req, res, next, errors)
+	}
+	errors = queryCreateObjectNotifyEvent(req, res, next);
+	if (errors) {
+		send_setup_errors(req, res, next, errors)
+	}
+	*/
 }
 
 exports.uninstall_setup = function(req, res, next) {
