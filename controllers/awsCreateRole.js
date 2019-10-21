@@ -5,6 +5,25 @@ const env = process.env.NODE_ENV || "development";
 const config = require('../config/cloud.js')[env];
 const lambdaARN = config.lambdaARN;
 
+const admin = require("firebase-admin");
+
+let serviceAccount;
+
+// Cloud firestore key file.
+if (process.env.NODE_ENV == "production")
+	serviceAccount = require("/etc/secrets/imagefix-firestore-keys.json");
+else if (process.env.NODE_ENV == "development")
+	serviceAccount = require("../config/imagefix-firestore-keys.json");
+
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: "https://imagefix-8377c.firebaseio.com"
+});
+
+const db = admin.firestore();
+
+
 let IAMPolicyGrantS3Access = {
 	"Version": "2012-10-17",
 	"Statement": [
