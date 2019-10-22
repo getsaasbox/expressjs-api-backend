@@ -158,6 +158,9 @@ exports.createIAMRole = function(req, res, next) {
 			secretAccessKey: userRef.get('accessKeySecret')
 		});
 		return createIAMRole_promise(req, res, next, params, iam)
+	}).catch(err => {
+		console.log("Firestore error fetching user", err);
+		return err;
 	})
 }
 

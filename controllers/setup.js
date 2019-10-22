@@ -34,7 +34,6 @@ admin.initializeApp({
 });
 
 const db = admin.firestore();
-
 exports.db = db;
 
 const jwtTokenData = function(req, res, next) {
@@ -152,21 +151,24 @@ exports.setup_serverless_complete = function(req, res, next) {
 	// --- Update Status --- 
 }
 
-const { createIAMRole, queryIAMRoleExists} = require("./awsCreateRole");
+const { createIAMRole, queryIAMRoleExists } = require("./awsCreateRole");
 
 const queryCreateAssumedRole = async function(req, res, next) {
 	return queryIAMRoleExists(req, res, next).then(result => {
-		//console.log("QueryIAMRoleExists success:", result)
+		console.log("QueryIAMRoleExists success");
 		return 0;
 	}).catch(err => {
-		//console.log("QueryIAMRoleExists exception:", err)
+		console.log("QueryIAMRoleExists exception")
 		return createIAMRole(req, res, next).then(result => {
+			console.log("IAM Role created:", result)
 			return updateIAMRoleTrustPolicy(req, res, next).then(result => {
 				return 0;
 			}).catch(err => {
+				console.log("Failed to update IAM Trust Policy:", err)
 				return { error: "Failed to update IAM Trust policy:" + err };
 			});
 		}).catch(err => {
+			console.log("Failed to create IAM role:", err);
 			return { error: "Failed to create IAM role:" + err }
 		})
 	});
