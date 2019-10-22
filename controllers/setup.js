@@ -152,26 +152,14 @@ exports.setup_serverless_complete = function(req, res, next) {
 	// --- Update Status --- 
 }
 
-
-
-/** Create Assumed Role **/
-const queryAssumedRoleExists = function(req, res, next) {
-
-}
-
-const createAssumedRole = function(req, res, next) {
-	let errors = {}
-	// Call AWS to create assumed role.
-	update_status({ status: 1, msg: "Assumed Role Created."});
-	return 0;
-}
-
 const { createIAMRole, queryIAMRoleExists} = require("./awsCreateRole");
 
 const queryCreateAssumedRole = async function(req, res, next) {
 	return queryIAMRoleExists(req, res, next).then(result => {
+		console.log("QueryIAMRoleExists success:", result)
 		return 0;
 	}).catch(err => {
+		console.log("QueryIAMRoleExists exception:", err)
 		return createIAMRole(req, res, next).then(result => {
 			return updateIAMRoleTrustPolicy(req, res, next).then(result => {
 				return 0
@@ -378,7 +366,8 @@ exports.submit_setup = async function(req, res, next) {
 	}
 	await update_status(req, res, next, 3, "Assumed Role Created. Trust policy updated.");
 
-	res.status(200).send({ msg: "Success creating Assumed Role / Updating trust policy." })
+	res.status(200).send({ msg: "Success creating Assumed Role / Updating trust policy." });
+
 	/*
 	errors = queryAttachIAMPolicyLetLambdaSwitchToAssumedRole(req, res, next);
 	if (errors) {
