@@ -12,7 +12,7 @@ let serviceAccount;
 
 const { db } = require("./setup");
 
-const getCrossAccountTrustPolicy = function(policy) {
+const getCrossAccountTrustPolicy = function() {
 	let crossAccountTrustPolicy = `{
 	    "Version": "2012-10-17",
 	    "Statement": [
@@ -26,7 +26,7 @@ const getCrossAccountTrustPolicy = function(policy) {
 	    ]
 	}`
 	console.log("TrustPolicy:", crossAccountTrustPolicy)
-    return crossAccountTrustPolicy;
+    return JSON.stringify(crossAccountTrustPolicy);
 }
 
 const updateIAMRoleTrustPolicy_promise = function(req, res, next, params, iam) {
@@ -55,7 +55,7 @@ exports.updateIAMRoleTrustPolicy = function(req, res, next) {
 			secretAccessKey: userRef.get('accessKeySecret')
 		});
 		let params = {
-			PolicyDocument: getCrossAccountTrustPolicy(crossAccountTrustPolicy),	/* Policy adds Lambda role as principal */
+			PolicyDocument: getCrossAccountTrustPolicy(),	/* Policy adds Lambda role as principal */
 			RoleName: 'ImageFix-Lambda-S3-Accessor' /* Customer local IAM role */ 
 		}
 		return updateIAMRoleTrustPolicy_promise(req, res, next, params, iam);
@@ -110,7 +110,7 @@ const getIAMPolicyGrantS3Access = function(bucketName) {
 		]
 	}`;
 	console.log("Policy:", IAMPolicyGrantS3Access)
-	return IAMPolicyGrantS3Access; 
+	return JSON.stringify(IAMPolicyGrantS3Access);
 }
 
 exports.createIAMRole = function(req, res, next) {
