@@ -12,63 +12,21 @@ let serviceAccount;
 
 const { db } = require("./setup");
 
-
-let IAMPolicyGrantS3Access = {
-	"Version": "2012-10-17",
-	"Statement": [
-		{
-			"Action": [
-				"s3:ListAllMyBuckets"
-			],
-			"Effect": "Allow",
-			"Resource": [
-				"arn:aws:s3:::*"
-			]
-		},
-		{
-			"Action": [
-				"s3:ListBucket",
-				"s3:GetBucketLocation"
-			],
-			"Effect": "Allow",
-			"Resource": "arn:aws:s3:::{1}"
-		},
-		{
-			"Effect": "Allow",
-			"Action": [
-				"s3:GetObject",
-				"s3:PutObject"
-			],
-			"Resource": "arn:aws:s3:::{1}/*"
-		},
-	]
-}
-
-let crossAccountTrustPolicy = {
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Principal": {
-                "AWS": "{1}"
-            },
-            "Action": "sts:AssumeRole"
-        }
-    ]
-}
-
 const getCrossAccountTrustPolicy = function(policy) {
-	// In-place string format function. TODO: check license
-    if (!String.format) {
-            String.format = function(format) {
-                var args = Array.prototype.slice.call(arguments, 1);
-                return format.replace(/{(\d+)}/g, function(match, number) { 
-                return typeof args[number] != 'undefined' ? args[number] : match;
-            });
-        };
-    }
+	let crossAccountTrustPolicy = `{
+	    "Version": "2012-10-17",
+	    "Statement": [
+	        {
+	            "Effect": "Allow",
+	            "Principal": {
+	                "AWS": '${lambdaARN}'
+	            },
+	            "Action": "sts:AssumeRole"
+	        }
+	    ]
+	}`
 
-    return JSON.stringify(String.format(crossAccountTrustPolicy, lambdaARN));
+    return crossAccountTrustPolicy;
 }
 
 const updateIAMRoleTrustPolicy_promise = function(req, res, next, params, iam) {
@@ -121,18 +79,37 @@ const createIAMRole_promise = function(req, res, next, params, iam) {
 
 // Add s3Bucketname to policy template and return the JSON string.
 const getIAMPolicyGrantS3Access = function(bucketName) {
-	// In-place string format function. TODO: check license
-    if (!String.format) {
-            String.format = function(format) {
-                var args = Array.prototype.slice.call(arguments, 1);
-                return format.replace(/{(\d+)}/g, function(match, number) { 
-                return typeof args[number] != 'undefined' ? args[number] : match;
-            });
-        };
-    }
-    const policy = String.format(IAMPolicyGrantS3Access, bucketName);
-
-    return policy;
+	let IAMPolicyGrantS3Access = `{
+		"Version": "2012-10-17",
+		"Statement": [
+			{
+				"Action": [
+					"s3:ListAllMyBuckets"
+				],
+				"Effect": "Allow",
+				"Resource": [
+					"arn:aws:s3:::*"
+				]
+			},
+			{
+				"Action": [
+					"s3:ListBucket",
+					"s3:GetBucketLocation"
+				],
+				"Effect": "Allow",
+				"Resource": "arn:aws:s3:::${bucketName}"
+			},
+			{
+				"Effect": "Allow",
+				"Action": [
+					"s3:GetObject",
+					"s3:PutObject"
+				],
+				"Resource": "arn:aws:s3:::${bucketName}/*"
+			},
+		]
+	}`;
+	return IAMPolicyGrantS3Access; 
 }
 
 exports.createIAMRole = function(req, res, next) {
