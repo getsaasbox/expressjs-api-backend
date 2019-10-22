@@ -35,6 +35,7 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
+exports.db = db;
 
 const jwtTokenData = function(req, res, next) {
 	const token = req.header('Authorization').replace('Bearer', '').trim();
