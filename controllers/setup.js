@@ -156,15 +156,15 @@ const { createIAMRole, queryIAMRoleExists} = require("./awsCreateRole");
 
 const queryCreateAssumedRole = async function(req, res, next) {
 	return queryIAMRoleExists(req, res, next).then(result => {
-		console.log("QueryIAMRoleExists success:", result)
+		//console.log("QueryIAMRoleExists success:", result)
 		return 0;
 	}).catch(err => {
-		console.log("QueryIAMRoleExists exception:", err)
+		//console.log("QueryIAMRoleExists exception:", err)
 		return createIAMRole(req, res, next).then(result => {
 			return updateIAMRoleTrustPolicy(req, res, next).then(result => {
-				return 0
+				return 0;
 			}).catch(err => {
-				return { error: "Failed to update IAM Trust policy" + err };
+				return { error: "Failed to update IAM Trust policy:" + err };
 			})
 			return 0;
 		}).catch(err => {
@@ -363,11 +363,10 @@ exports.submit_setup = async function(req, res, next) {
 	error = await queryCreateAssumedRole(req, res, next);
 	if (error) {
 		send_setup_errors(req, res, next, error);
+	} else {
+		await update_status(req, res, next, 3, "Assumed Role Created. Trust policy updated.");
+		res.status(200).send({ msg: "Success creating Assumed Role / Updating trust policy." });
 	}
-	await update_status(req, res, next, 3, "Assumed Role Created. Trust policy updated.");
-
-	res.status(200).send({ msg: "Success creating Assumed Role / Updating trust policy." });
-
 	/*
 	errors = queryAttachIAMPolicyLetLambdaSwitchToAssumedRole(req, res, next);
 	if (errors) {
