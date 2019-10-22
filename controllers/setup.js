@@ -151,7 +151,7 @@ exports.setup_serverless_complete = function(req, res, next) {
 	// --- Update Status --- 
 }
 
-const { createIAMRole, queryIAMRoleExists } = require("./awsCreateRole");
+const { createIAMRole, queryIAMRoleExists, updateIAMRoleTrustPolicy } = require("./awsCreateRole");
 
 const queryCreateAssumedRole = async function(req, res, next) {
 	return queryIAMRoleExists(req, res, next).then(result => {

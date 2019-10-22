@@ -25,7 +25,7 @@ const getCrossAccountTrustPolicy = function(policy) {
 	        }
 	    ]
 	}`
-
+	console.log("TrustPolicy:", crossAccountTrustPolicy)
     return crossAccountTrustPolicy;
 }
 
@@ -109,6 +109,7 @@ const getIAMPolicyGrantS3Access = function(bucketName) {
 			},
 		]
 	}`;
+	console.log("Policy:", IAMPolicyGrantS3Access)
 	return IAMPolicyGrantS3Access; 
 }
 
@@ -117,10 +118,10 @@ exports.createIAMRole = function(req, res, next) {
 	console.log("Creating the IAM role.")
 	return db.collection('users').doc(user_info.id).get().then(userRef => {
 		let params = {
-		 	AssumeRolePolicyDocument: JSON.stringify(getIAMPolicyGrantS3Access(userRef.get("s3BucketName"))),
+		 	AssumeRolePolicyDocument: getIAMPolicyGrantS3Access(userRef.get("s3BucketName")),
 		 	RoleName: 'ImageFix-Lambda-S3-Accessor', /* required */
 		 	Description: 'Executes Image optimizations on your S3 buckets',
-		 	MaxSessionDuration: '86400',
+		 	MaxSessionDuration: '43200',
 		 	Path: '/',
 		 	//PermissionsBoundary: 'STRING_VALUE',
 		 	Tags: [
