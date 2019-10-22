@@ -165,8 +165,7 @@ const queryCreateAssumedRole = async function(req, res, next) {
 				return 0;
 			}).catch(err => {
 				return { error: "Failed to update IAM Trust policy:" + err };
-			})
-			return 0;
+			});
 		}).catch(err => {
 			return { error: "Failed to create IAM role:" + err }
 		})
