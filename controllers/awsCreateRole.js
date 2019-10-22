@@ -108,11 +108,11 @@ const createIAMRole_promise = function(req, res, next, params, iam) {
 	return new Promise((resolve, reject) => {
 		iam.createRole(params, function(err, data) {
   			if (err) {
-  				console.log(err, err.stack); // an error occurred
+  				console.log("Error creating IAM Role:" + err, err.stack); // an error occurred
   				reject(err)
   			}
   			else {
-  				console.log(data);           // successful response
+  				console.log("Create role success:" + data);           // successful response
   				resolve(data);
   			}
 		});		
@@ -137,6 +137,7 @@ const getIAMPolicyGrantS3Access = function(bucketName) {
 
 exports.createIAMRole = function(req, res, next) {
 	let user_info = req.user_info;
+	console.log("Creating the IAM role.")
 	return db.collection('users').doc(user_info.id).get().then(userRef => {
 		let params = {
 		 	AssumeRolePolicyDocument: JSON.stringify(getIAMPolicyGrantS3Access(userRef.get("s3BucketName"))),
