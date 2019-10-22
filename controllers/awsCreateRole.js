@@ -7,6 +7,7 @@ const lambdaARN = config.lambdaARN;
 
 const admin = require("firebase-admin");
 
+const AWS = require('aws-sdk')
 let serviceAccount;
 
 const { db } = require("./setup");
