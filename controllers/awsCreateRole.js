@@ -19,7 +19,7 @@ const getCrossAccountTrustPolicy = function() {
 	        {
 	            "Effect": "Allow",
 	            "Principal": {
-	                "AWS": '${lambdaARN}'
+	                "AWS": "${lambdaARN}"
 	            },
 	            "Action": "sts:AssumeRole"
 	        }
@@ -110,7 +110,7 @@ const getIAMPolicyGrantS3Access = function(bucketName) {
 		]
 	}`;
 	console.log("Policy:", IAMPolicyGrantS3Access)
-	return JSON.stringify(IAMPolicyGrantS3Access);
+	return IAMPolicyGrantS3Access;
 }
 
 exports.createIAMRole = function(req, res, next) {
@@ -137,7 +137,7 @@ exports.createIAMRole = function(req, res, next) {
 		});
 		return createIAMRole_promise(req, res, next, params, iam)
 	}).catch(err => {
-		console.log("Firestore error fetching user", err);
+		console.log("Creating IAM role failed.", err);
 		return err;
 	})
 }
