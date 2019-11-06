@@ -169,28 +169,6 @@ const queryCreateAssumedRole = async function(req, res, next) {
 	});
 }
 
-const queryTrustPolicyExists = function(req, res, next) {
-
-}
-
-/** Create Trust Policy **/
-const createTrustPolicy = function(req, res, next) {
-	let errors = {}
-	// Call AWS to create assumed role.
-
-	update_status({ status: 1, msg: "Trust Policy Created"});
-	return 0;
-}
-
-const queryCreateTrustPolicy = function(req, res, next) {
-
-	if (queryTrustPolicyExists(req, res, next)) {
-		return 0;
-	} else {
-		return createTrustPolicy(req, res, next);
-	}
-}
-
 /** Attach Lambda Policy **/
 const queryLambdaPolicyAttached = function(req, res, next) {
 
