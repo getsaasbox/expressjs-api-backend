@@ -151,7 +151,7 @@ exports.setup_serverless_complete = function(req, res, next) {
 	// --- Update Status --- 
 }
 
-const { createIAMRole, queryIAMRoleExists, createAttachIAMPolicy } = require("./awsCreateRole");
+const { createIAMRole, queryIAMRoleExists, queryCreateAttachIAMPolicy } = require("./awsCreateRole");
 
 const queryCreateAssumedRole = async function(req, res, next) {
 	return queryIAMRoleExists(req, res, next).then(result => {
@@ -341,13 +341,16 @@ exports.submit_setup = async function(req, res, next) {
 		await update_status(req, res, next, 3, "Assumed Role Created with Lambda Trust Policy");
 		res.status(200).send({ msg: "Success creating Assumed Role with Lambda Trust Policy" });
 	}
-	error = await createAttachIAMPolicy(req, res, next);
-	if (error) {
+
+	try {
+		await queryCreateAttachIAMPolicy(req, res, next);
+	} catch (error) {
 		send_setup_errors(req, res, next, error)
-	} else {
-		await update_status(req, res, next, 4, "Policy created and attached to new role");
-		res.status(200).send({ msg: "Success creating attached policy for S3 access" });
 	}
+	
+	await update_status(req, res, next, 4, "Policy created and attached to new role");
+	res.status(200).send({ msg: "Success creating attached policy for S3 access" });
+	
 	/*
 	errors = queryCreateObjectNotifyEvent(req, res, next);
 	if (errors) {
