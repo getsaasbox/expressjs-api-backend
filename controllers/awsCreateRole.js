@@ -91,12 +91,6 @@ exports.createAttachIAMPolicy = function(req, res, next) {
 		 	PolicyName: 'GrantS3AccessForImageFixRole', /* required */
 		 	Description: 'For executing image optimizations on given S3 buckets',
 		 	Path: '/',
-		 	Tags: [
-		 		{
-					Key: 'ImageFix', /* required */
-					Value: 'ImageFix' /* required */
-				}
-		 	]
 		};
 		return createIAMPolicy_promise(req, res, next, params, iam).then(result => {
 			console.log("Created the policy with ARN:", result.Policy.Arn);
