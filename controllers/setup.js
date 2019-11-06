@@ -345,13 +345,12 @@ exports.submit_setup = async function(req, res, next) {
 
 	try {
 		await queryCreateAttachIAMPolicy(req, res, next);
+		await update_status(req, res, next, 4, "Policy created and attached to new role");
+		res.status(200).send({ msg: "Success creating attached policy for S3 access" });
 	} catch (error) {
 		send_setup_errors(req, res, next, error)
 	}
-	
-	await update_status(req, res, next, 4, "Policy created and attached to new role");
-	res.status(200).send({ msg: "Success creating attached policy for S3 access" });
-	
+
 	/*
 	errors = queryCreateObjectNotifyEvent(req, res, next);
 	if (errors) {

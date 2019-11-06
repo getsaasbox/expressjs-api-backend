@@ -92,6 +92,41 @@ const queryIAMPolicyExists = function(req, res, next) {
     })
 }
 
+const createAttachIAMPolicy = function(req, res, next, userRef) {
+    let user_info = req.user_info;
+
+    let iam = new AWS.IAM({
+        accessKeyId: userRef.get('accessKeyId'),
+        secretAccessKey: userRef.get('accessKeySecret')
+    });
+
+    let params = {
+        PolicyDocument: getIAMPolicyGrantS3Access(userRef.get("s3BucketName")),
+        PolicyName: 'GrantS3AccessForImageFixRole'+"-"+ userRef.get("s3BucketName"), /* required */
+        Description: 'For executing image optimizations on given S3 buckets',
+        Path: '/',
+    };
+    return createIAMPolicy_promise(req, res, next, params, iam).then(result => {
+        console.log("Created the policy with ARN:", result.Policy.Arn);
+        return db.collection('users').doc(user_info.id).set({
+            s3BucketIAMPolicy: result.Policy.Arn,
+            }, { merge: true 
+        }).then(result => {
+            return attachRolePolicy(req, res, next, result.Policy.Arn, iam).then(result => {
+                return 0;
+            }).catch(err => {
+                console.log("Failed attaching the policy to IAM user.")
+                return err;
+            })
+        }).catch(err => {
+            return { error: "Failed saving user credentials.\n" + err };
+        });
+    }).catch(err => {
+        console.log("Failed to create/attach IAM policy:,", err);
+        return err;
+    })
+}
+
 /*
  * Check database if policy ARN exists,
  * If it doesn't create the policy and attach to IAM role.
@@ -105,37 +140,8 @@ exports.queryCreateAttachIAMPolicy = async function(req, res, next) {
                 console.log("IAM policy exists for this bucket");
                 return 0;
             } else {
-                console.log("IAM policy does not exist, creating it.")
-                let iam = new AWS.IAM({
-                    accessKeyId: userRef.get('accessKeyId'),
-                    secretAccessKey: userRef.get('accessKeySecret')
-                });
-
-                let params = {
-                    PolicyDocument: getIAMPolicyGrantS3Access(userRef.get("s3BucketName")),
-                    PolicyName: 'GrantS3AccessForImageFixRole'+"-"+ userRef.get("s3BucketName"), /* required */
-                    Description: 'For executing image optimizations on given S3 buckets',
-                    Path: '/',
-                };
-                return createIAMPolicy_promise(req, res, next, params, iam).then(result => {
-                    console.log("Created the policy with ARN:", result.Policy.Arn);
-                    return db.collection('users').doc(user_info.id).set({
-                        s3BucketIAMPolicy: result.Policy.Arn,
-                        }, { merge: true 
-                    }).then(result => {
-                        return attachRolePolicy(req, res, next, result.Policy.Arn, iam).then(result => {
-                            return 0;
-                        }).catch(err => {
-                            console.log("Failed attaching the policy to IAM user.")
-                            return err;
-                        })
-                    }).catch(err => {
-                        return { error: "Failed saving user credentials.\n" + err };
-                    });
-                }).catch(err => {
-                    console.log("Failed to create/attach IAM policy:,", err);
-                    return err;
-                })
+                 console.log("IAM policy does not exist, creating it.")
+                 return createAttachIAMPolicy(req, res, next, userRef)
             }
         });
     })
