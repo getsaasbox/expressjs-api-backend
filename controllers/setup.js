@@ -339,11 +339,12 @@ exports.submit_setup = async function(req, res, next) {
 	} else {
 		await update_status(req, res, next, 3, "Assumed Role Created with Lambda Trust Policy");
 	}
-	error = await queryCreateAttachIAMPolicy(req, res, next);
-	if (error) {
-		send_setup_errors(req, res, next, error)
-	} else {
+
+	try {
+		await queryCreateAttachIAMPolicy(req, res, next);
 		await update_status(req, res, next, 4, "Created and Attached Policy for S3 Access");
+	} catch (error) {
+		send_setup_errors(req, res, next, error)
 	}
 
 	try {
