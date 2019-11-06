@@ -87,7 +87,7 @@ exports.createAttachIAMPolicy = function(req, res, next) {
 		});
 
 		let params = {
-		 	PolicyDocument: getIAMPolicyGrantS3Access(userRef.get("bucketName")),
+		 	PolicyDocument: getIAMPolicyGrantS3Access(userRef.get("s3BucketName")),
 		 	PolicyName: 'GrantS3AccessForImageFixRole', /* required */
 		 	Description: 'For executing image optimizations on given S3 buckets',
 		 	Path: '/',
