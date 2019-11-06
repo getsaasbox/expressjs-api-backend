@@ -107,12 +107,13 @@ const createAttachIAMPolicy = function(req, res, next, userRef) {
         Path: '/',
     };
     return createIAMPolicy_promise(req, res, next, params, iam).then(result => {
-        console.log("Created the policy with ARN:", result.Policy.Arn);
+        let policy = result.Policy;
+        console.log("Created the policy with ARN:", policy.Arn);
         return db.collection('users').doc(user_info.id).set({
-            s3BucketIAMPolicy: result.Policy.Arn,
+            s3BucketIAMPolicy: policy.Arn,
             }, { merge: true 
         }).then(result => {
-            return attachRolePolicy(req, res, next, result.Policy.Arn, iam, roleName).then(result => {
+            return attachRolePolicy(req, res, next, policy.Arn, iam, roleName).then(result => {
                 return 0;
             }).catch(err => {
                 console.log("Failed attaching the policy to IAM user.")
@@ -301,13 +302,14 @@ const createAttachLambdaAssumeRolePolicy = function(req, res, next, userRef) {
     };
     return createIAMPolicy_promise(req, res, next, params, iam).then(result => {
         console.log("Created the policy with ARN:", result.Policy.Arn);
+        let policy = result.Policy;
         return db.collection('users').doc(user_info.id).set({
-            LambdaAssumeRolePolicy: result.Policy.Arn,
+            LambdaAssumeRolePolicy: policy.Arn,
             }, { merge: true 
         }).then(result => {
-            console.log("Attaching policy: " + result.Policy.Arn + " to lambda role: ", config.lambdaRole)
-            return attachRolePolicy(req, res, next, result.Policy.Arn, iam, config.lambdaRole).then(result => {
-                console.log("Attached policy: " + result.Policy.Arn + " to lambda role: ", config.lambdaRole)
+            console.log("Attaching policy: " + policy.Arn + " to lambda role: ", config.lambdaRole)
+            return attachRolePolicy(req, res, next, policy.Arn, iam, config.lambdaRole).then(result => {
+                console.log("Attached policy: " + policy.Arn + " to lambda role: ", config.lambdaRole)
                 return 0;
             }).catch(err => {
                 console.log("Failed attaching the policy to Lambda role.")
