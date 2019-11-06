@@ -155,7 +155,7 @@ const getIAMTrustPolicy = function() {
 	            "Action": "sts:AssumeRole"
 	        }
 	    ]
-	}`
+	}`;
 }
 
 exports.createIAMRole = function(req, res, next) {
