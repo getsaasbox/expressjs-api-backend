@@ -66,6 +66,7 @@ const createNewUserDoc = async function(req, res, next, user_info) {
 				accessKeySecret: "",
 				accountId: "",
 				s3BucketName: "",
+				s3BucketIAMPolicy: "",
 				install_status_code: 0,
 				install_status_msg: "Install Not Started"
 			}).then(userRef => {

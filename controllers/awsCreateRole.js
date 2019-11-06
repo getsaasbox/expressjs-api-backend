@@ -84,6 +84,7 @@ const queryIAMPolicyExists = function(req, res, next) {
     return db.collection('users').doc(user_info.id).get().then(userRef => {
         let policy = userRef.get("s3BucketIAMPolicy")
         if (policy) {
+            console.log("Policy:", policy)
             return true
         } else {
             return false;
