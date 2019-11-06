@@ -347,7 +347,8 @@ exports.submit_setup = async function(req, res, next) {
 	}
 
 	try {
-		await queryCreateAttachLambdaAssumeRolePolicy(req, res, next);
+		let result = await queryCreateAttachLambdaAssumeRolePolicy(req, res, next);
+		console.log("Result attaching lambda policy:", result);
 		await update_status(req, res, next, 5, "Attached Policy to Lambda to let it switch to Assumed role");
 		res.status(200).send({ msg: "Success creating Assumed Role with Lambda Trust Policy" });
 	} catch (errors) {
