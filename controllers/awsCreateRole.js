@@ -67,7 +67,7 @@ const createIAMPolicy_promise = function(req, res, next, params, iam) {
     return new Promise((resolve, reject) => {
         iam.createPolicy(params, function(err, data) {
             if (err) {
-                console.log("Error creating policy:" + err, err.stack); // an error occurred
+                console.log("Error creating policy: " + err); // an error occurred
                 reject(err)
             }
             else {
@@ -95,19 +95,22 @@ exports.createAttachIAMPolicy = async function(req, res, next) {
         };
         return createIAMPolicy_promise(req, res, next, params, iam).then(result => {
             console.log("Created the policy with ARN:", result.Policy.Arn);
-
             return attachRolePolicy(req, res, next, result.Policy.Arn, iam).then(result => {
                 return 0
             }).catch(err => {
-                // Entity already exists, we assume it is also attached, and leave it.
-                if (err.code == "EntityAlreadyExists") {
-                    console.log("Policy already exists, assuming it is attached.\n");
-                    return 0;
-                }
                 console.log("Failed attaching the policy to IAM user.")
                 return err;
             })
-        }).catch(err => { console.log("Failed to create IAM policy:,", err); return err; })
+        }).catch(err => {
+            // Entity already exists, we assume it is also attached, and leave it.
+            if (err.code == "EntityAlreadyExists") {
+                console.log("Policy already exists, assuming it is attached.\n");
+                return 0;
+            } else {
+                console.log("Failed to create IAM policy:,", err);
+                return err; 
+            }
+        })
     })
 }
 
