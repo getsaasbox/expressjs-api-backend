@@ -112,7 +112,7 @@ const createAttachIAMPolicy = function(req, res, next, userRef) {
             s3BucketIAMPolicy: result.Policy.Arn,
             }, { merge: true 
         }).then(result => {
-            return attachRolePolicy(req, res, next, result.Policy.Arn, iam).then(result => {
+            return attachRolePolicy(req, res, next, result.Policy.Arn, iam, roleName).then(result => {
                 return 0;
             }).catch(err => {
                 console.log("Failed attaching the policy to IAM user.")
@@ -147,10 +147,10 @@ exports.queryCreateAttachIAMPolicy = async function(req, res, next) {
     })
 }
 
-const attachRolePolicy = function(req, res, next, ARN, iam) {
+const attachRolePolicy = function(req, res, next, ARN, iam, role) {
     let params = {
         PolicyArn: ARN,
-        RoleName: roleName
+        RoleName: role
     }
     return new Promise((resolve, reject) => {
         iam.attachRolePolicy(params, function(err, data) {
@@ -254,5 +254,86 @@ exports.queryIAMRoleExists = function(req, res, next) {
     })
 }
 
+const queryLambdaAssumeRolePolicyExists = function(req, res, next) {
+    let user_info = req.user_info;
+
+    return db.collection('users').doc(user_info.id).get().then(userRef => {
+        let policy = userRef.get("LambdaAssumeRolePolicy")
+        if (policy) {
+            console.log("Policy:", policy)
+            return true
+        } else {
+            return false;
+        }
+    })
+}
+
+
+
+const getLambdaAssumeRolePolicy = function(customerAccountId) {
+    let lambdaAssumeRolePolicy =
+`{
+    "Version": "2012-10-17",
+    "Statement": {
+        "Effect": "Allow",
+        "Action": "sts:AssumeRole",
+        "Resource": "arn:aws:iam::${customerAccountId}:role/${roleName}"
+    }
+}`
+    return lambdaAssumeRolePolicy;
+
+}
+
+/* Create policy in our service account to let our Lambda to assume the role in customer account */
+const createAttachLambdaAssumeRolePolicy = function(req, res, next, userRef) {
+    let user_info = req.user_info;
+
+    let iam = new AWS.IAM({
+        accessKeyId: config.awsLambdaAssumeRoleAccessKeyId,
+        secretAccessKey: config.awsLambdaAssumeRoleSecret
+    });
+
+    let params = {
+        PolicyDocument: getLambdaAssumeRolePolicy(userRef.get("accountId")),
+        PolicyName: 'LambdaAssumeCrossAccountRole'+"-"+ userRef.get("accountId"), /* required */
+        Description: 'For executing image optimizations on cross-account S3 buckets',
+        Path: '/',
+    };
+    return createIAMPolicy_promise(req, res, next, params, iam).then(result => {
+        console.log("Created the policy with ARN:", result.Policy.Arn);
+        return db.collection('users').doc(user_info.id).set({
+            LambdaAssumeRolePolicy: result.Policy.Arn,
+            }, { merge: true 
+        }).then(result => {
+            return attachRolePolicy(req, res, next, result.Policy.Arn, iam, config.lambdaRole).then(result => {
+                return 0;
+            }).catch(err => {
+                console.log("Failed attaching the policy to Lambda role.")
+                return err;
+            })
+        }).catch(err => {
+            return { error: "Failed saving user credentials.\n" + err };
+        });
+    }).catch(err => {
+        console.log("Failed to create/attach IAM policy:,", err);
+        return err;
+    })
+}
+
+exports.queryCreateAttachLambdaAssumeRolePolicy = async function(req, res, next) {
+    let user_info = req.user_info;
+
+    return db.collection('users').doc(user_info.id).get().then(userRef => {
+        return queryLambdaAssumeRolePolicyExists(req, res, next).then(exists => {
+            if (exists) {
+                console.log("Lambda Assume Role policy exists for this account");
+                return 0;
+            } else {
+                 console.log("Lambda Assume role policy does not exist, creating it.")
+                 return createAttachLambdaAssumeRolePolicy(req, res, next, userRef)
+            }
+        });
+    });
+}
 
 

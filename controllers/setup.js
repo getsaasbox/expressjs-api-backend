@@ -16,7 +16,6 @@ const jwt = require('jsonwebtoken');
 
 const jwt_secret = config.jwt_secret;
 
-
 const admin = require("firebase-admin");
 
 let serviceAccount;
@@ -56,8 +55,6 @@ const jwtTokenData = function(req, res, next) {
 	s3BucketName: ""
 }
 */
-
-
 const createNewUserDoc = async function(req, res, next, user_info) {
 	return db.collection('users').doc(user_info.id).get().then(user => {
 		if (!user.exists) {
@@ -66,9 +63,10 @@ const createNewUserDoc = async function(req, res, next, user_info) {
 				accessKeySecret: "",
 				accountId: "",
 				s3BucketName: "",
-				s3BucketIAMPolicy: "",
 				install_status_code: 0,
-				install_status_msg: "Install Not Started"
+				install_status_msg: "Install Not Started",
+				LambdaAssumeRolePolicy: "",
+				s3BucketIAMPolicy: ""
 			}).then(userRef => {
 				return 0;
 			}).catch(err => {
@@ -152,7 +150,7 @@ exports.setup_serverless_complete = function(req, res, next) {
 	// --- Update Status --- 
 }
 
-const { createIAMRole, queryIAMRoleExists, queryCreateAttachIAMPolicy } = require("./awsCreateRole");
+const { createIAMRole, queryIAMRoleExists, createAttachIAMPolicy, queryCreateAttachLambdaAssumeRolePolicy } = require("./awsCreateRole");
 
 const queryCreateAssumedRole = async function(req, res, next) {
 	return queryIAMRoleExists(req, res, next).then(result => {
@@ -340,15 +338,21 @@ exports.submit_setup = async function(req, res, next) {
 		send_setup_errors(req, res, next, error);
 	} else {
 		await update_status(req, res, next, 3, "Assumed Role Created with Lambda Trust Policy");
-		res.status(200).send({ msg: "Success creating Assumed Role with Lambda Trust Policy" });
+	}
+	error = await createAttachIAMPolicy(req, res, next);
+	if (error) {
+		send_setup_errors(req, res, next, error)
+	} else {
+		await update_status(req, res, next, 4, "Created and Attached Policy for S3 Access");
 	}
 
 	try {
-		await queryCreateAttachIAMPolicy(req, res, next);
-		await update_status(req, res, next, 4, "Policy created and attached to new role");
-		res.status(200).send({ msg: "Success creating attached policy for S3 access" });
-	} catch (error) {
-		send_setup_errors(req, res, next, error)
+		await queryCreateAttachLambdaAssumeRolePolicy(req, res, next);
+		await update_status(req, res, next, 5, "Attached Policy to Lambda to let it switch to Assumed role");
+		res.status(200).send({ msg: "Success creating Assumed Role with Lambda Trust Policy" });
+	} catch (errors) {
+		console.log("Error query/create/attach/ Lambda policy to assume role: ", errors);
+		send_setup_errors(req, res, next, errors)
 	}
 
 	/*
