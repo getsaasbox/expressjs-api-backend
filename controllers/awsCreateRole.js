@@ -305,6 +305,7 @@ const createAttachLambdaAssumeRolePolicy = function(req, res, next, userRef) {
             LambdaAssumeRolePolicy: result.Policy.Arn,
             }, { merge: true 
         }).then(result => {
+            console.log("Attaching policy: " + result.Policy.Arn + " to lambda role: ", config.lambdaRole)
             return attachRolePolicy(req, res, next, result.Policy.Arn, iam, config.lambdaRole).then(result => {
                 console.log("Attached policy: " + result.Policy.Arn + " to lambda role: ", config.lambdaRole)
                 return 0;
