@@ -78,7 +78,7 @@ const createIAMPolicy_promise = function(req, res, next, params, iam) {
     });
 }
 
-exports.createAttachIAMPolicy = function(req, res, next) {
+exports.createAttachIAMPolicy = async function(req, res, next) {
     let user_info = req.user_info;
 
     return db.collection('users').doc(user_info.id).get().then(userRef => {
