@@ -316,8 +316,8 @@ const createAttachLambdaAssumeRolePolicy = function(req, res, next, userRef) {
                 return err;
             })
         }).catch(err => {
-            console.log("Failed saving Lambda Policy ARN to firestore.")
-            return { error: "Failed saving user credentials.\n" + err };
+            console.log("Failed saving Lambda Policy ARN to firestore. Error: ", err)
+            return { error: "Failed saving Lambda Policy ARN to firestore. Error: " + err };
         });
     }).catch(err => {
         console.log("Failed to create/attach IAM policy:,", err);
