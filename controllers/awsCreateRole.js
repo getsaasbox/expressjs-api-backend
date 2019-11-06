@@ -89,7 +89,7 @@ exports.createAttachIAMPolicy = function(req, res, next) {
 
         let params = {
             PolicyDocument: getIAMPolicyGrantS3Access(userRef.get("s3BucketName")),
-            PolicyName: 'GrantS3AccessForImageFixRole', /* required */
+            PolicyName: 'GrantS3AccessForImageFixRole'+"-"+ userRef.get("s3BucketName"), /* required */
             Description: 'For executing image optimizations on given S3 buckets',
             Path: '/',
         };
@@ -99,6 +99,11 @@ exports.createAttachIAMPolicy = function(req, res, next) {
             return attachRolePolicy(req, res, next, result.Policy.Arn, iam).then(result => {
                 return 0
             }).catch(err => {
+                // Entity already exists, we assume it is also attached, and leave it.
+                if (err.code == "EntityAlreadyExists") {
+                    console.log("Policy already exists, assuming it is attached.\n");
+                    return 0;
+                }
                 console.log("Failed attaching the policy to IAM user.")
                 return err;
             })
