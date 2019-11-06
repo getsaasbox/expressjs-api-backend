@@ -27,36 +27,37 @@ const roleName = "ImageFix-Lambda-S3-Accessor"
 
 // Add s3Bucketname to policy template and return the JSON string.
 const getIAMPolicyGrantS3Access = function(bucketName) {
-    let IAMPolicyGrantS3Access = `{
-        "Version": "2012-10-17",
-        "Statement": [
-            {
-                "Action": [
-                    "s3:ListAllMyBuckets"
-                ],
-                "Effect": "Allow",
-                "Resource": [
-                    "arn:aws:s3:::*"
-                ]
-            },
-            {
-                "Action": [
-                    "s3:ListBucket",
-                    "s3:GetBucketLocation"
-                ],
-                "Effect": "Allow",
-                "Resource": "arn:aws:s3:::${bucketName}"
-            },
-            {
-                "Effect": "Allow",
-                "Action": [
-                    "s3:GetObject",
-                    "s3:PutObject"
-                ],
-                "Resource": "arn:aws:s3:::${bucketName}/*"
-            },
-        ]
-    }`;
+    let IAMPolicyGrantS3Access =
+`{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": [
+                "s3:ListAllMyBuckets"
+            ],
+            "Effect": "Allow",
+            "Resource": [
+                "arn:aws:s3:::*"
+            ]
+        },
+        {
+            "Action": [
+                "s3:ListBucket",
+                "s3:GetBucketLocation"
+            ],
+            "Effect": "Allow",
+            "Resource": "arn:aws:s3:::${bucketName}"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetObject",
+                "s3:PutObject"
+            ],
+            "Resource": "arn:aws:s3:::${bucketName}/*"
+        }
+    ]
+}`;
     console.log("Policy:", IAMPolicyGrantS3Access)
     return IAMPolicyGrantS3Access;
 }
