@@ -151,7 +151,7 @@ exports.setup_serverless_complete = function(req, res, next) {
 	// --- Update Status --- 
 }
 
-const { createIAMRole, queryIAMRoleExists, updateIAMRoleTrustPolicy } = require("./awsCreateRole");
+const { createIAMRole, queryIAMRoleExists, createAttachIAMPolicy } = require("./awsCreateRole");
 
 const queryCreateAssumedRole = async function(req, res, next) {
 	return queryIAMRoleExists(req, res, next).then(result => {
@@ -338,8 +338,8 @@ const setup_state = {
 	"0" : "Install not started.",
 	"1" : "Pre-install checks complete.",
 	"2" : "User found or created.",
-	"3" : "Created Assumed Role to allow access to S3 bucket.",
-	"4" : "Updated Assumed Role Trust Policy to add Lambda role as a principal.",
+	"3" : "Created Assumed Role with Lambda Trust Policy.",
+	"4" : "Created and Attached Policy for S3 access.",
 	"5" : "Attached Policy to Lambda to let it switch to Assumed Role.",
 	"6" : "Creating Notifications from AWS S3.",
 	"7" : "Install Complete."
@@ -365,14 +365,19 @@ exports.submit_setup = async function(req, res, next) {
 	if (error) {
 		send_setup_errors(req, res, next, error);
 	} else {
-		await update_status(req, res, next, 3, "Assumed Role Created. Trust policy updated.");
-		res.status(200).send({ msg: "Success creating Assumed Role / Updating trust policy." });
+		await update_status(req, res, next, 3, "Assumed Role Created with Lambda Trust Policy");
+		res.status(200).send({ msg: "Success creating Assumed Role with Lambda Trust Policy" });
 	}
 	/*
-	errors = queryAttachIAMPolicyLetLambdaSwitchToAssumedRole(req, res, next);
-	if (errors) {
-		send_setup_errors(req, res, next, errors)
+	error = await createAttachIAMPolicy(req, res, next);
+	if (error) {
+		send_setup_errors(req, res, next, error)
+	} else {
+		await update_status(req, res, next, 4, "Policy created and attached to new role");
+		res.status(200).send({ msg: "Success creating attached policy for S3 access" });
 	}
+*/
+	/*
 	errors = queryCreateObjectNotifyEvent(req, res, next);
 	if (errors) {
 		send_setup_errors(req, res, next, errors)

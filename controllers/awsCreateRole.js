@@ -12,70 +12,18 @@ let serviceAccount;
 
 const { db } = require("./setup");
 
-const getCrossAccountTrustPolicy = function() {
-	let crossAccountTrustPolicy = `{
-	    "Version": "2012-10-17",
-	    "Statement": [
-	        {
-	            "Effect": "Allow",
-	            "Principal": {
-	                "AWS": "${lambdaARN}"
-	            },
-	            "Action": "sts:AssumeRole"
-	        }
-	    ]
-	}`
-	console.log("TrustPolicy:", crossAccountTrustPolicy)
-    return JSON.stringify(crossAccountTrustPolicy);
-}
-
-const updateIAMRoleTrustPolicy_promise = function(req, res, next, params, iam) {
-	return new Promise((resolve, reject) => {
-		iam.updateAssumeRolePolicy(params, function(err, data) {
-  			if (err) {
-  				console.log(err, err.stack); // an error occurred
-  				reject(err)
-  			}
-  			else {
-  				console.log(data);           // successful response
-  				resolve(data);
-  			}
-		});		
-	});
-}
-
-
-// We have an existing local IAM Role just created for Lambda to access,
-// Here we modify it's trust policy to allow Lambda function's role as its principal.
-exports.updateIAMRoleTrustPolicy = function(req, res, next) {
-	let user_info = req.user_info;
-	return db.collection('users').doc(user_info.id).get().then(userRef => {
-		let iam = new AWS.IAM({
-			accessKeyId: userRef.get('accessKeyId'),
-			secretAccessKey: userRef.get('accessKeySecret')
-		});
-		let params = {
-			PolicyDocument: getCrossAccountTrustPolicy(),	/* Policy adds Lambda role as principal */
-			RoleName: 'ImageFix-Lambda-S3-Accessor' /* Customer local IAM role */ 
-		}
-		return updateIAMRoleTrustPolicy_promise(req, res, next, params, iam);
-	});
-}
-
-const createIAMRole_promise = function(req, res, next, params, iam) {
-	return new Promise((resolve, reject) => {
-		iam.createRole(params, function(err, data) {
-  			if (err) {
-  				console.log("Error creating IAM Role:" + err, err.stack); // an error occurred
-  				reject(err)
-  			}
-  			else {
-  				console.log("Create role success:" + data);           // successful response
-  				resolve(data);
-  			}
-		});		
-	});
-}
+/*
+ * Understanding policies and IAM roles:
+ *
+ * You can create an IAM role with a trust policy, or use updateAssumeRolePolicy to modify the trust policy.
+ * Trust policy defines who can assume this role.
+ *
+ * To add permissions to an IAM role, you attach a policy. You can do this after creating the IAM role.
+ * e.g. access to S3 buckets.
+ *
+ * The way it works is you first create the policy, then attach it referencing it via its ARN.
+ */
+const roleName = "ImageFix-Lambda-S3-Accessor"
 
 // Add s3Bucketname to policy template and return the JSON string.
 const getIAMPolicyGrantS3Access = function(bucketName) {
@@ -113,13 +61,110 @@ const getIAMPolicyGrantS3Access = function(bucketName) {
 	return IAMPolicyGrantS3Access;
 }
 
+const createIAMPolicy_promise = function(req, res, next, params, iam) {
+	
+	return new Promise((resolve, reject) => {
+		iam.createPolicy(params, function(err, data) {
+  			if (err) {
+  				console.log("Error creating IAM Role:" + err, err.stack); // an error occurred
+  				reject(err)
+  			}
+  			else {
+  				console.log("Create role success:" + data);           // successful response
+  				resolve(data);
+  			}
+		});		
+	});
+}
+
+exports.createAttachIAMPolicy = function(req, res, next) {
+	let user_info = req.user_info;
+
+	return db.collection('users').doc(user_info.id).get().then(userRef => {
+		let iam = new AWS.IAM({
+			accessKeyId: userRef.get('accessKeyId'),
+			secretAccessKey: userRef.get('accessKeySecret')
+		});
+
+		let params = {
+		 	PolicyDocument: getIAMPolicyGrantS3Access(userRef.get("bucketName")),
+		 	PolicyName: 'GrantS3AccessForImageFixRole', /* required */
+		 	Description: 'For executing image optimizations on given S3 buckets',
+		 	Path: '/',
+		 	Tags: [
+		 		{
+					Key: 'ImageFix', /* required */
+					Value: 'ImageFix' /* required */
+				}
+		 	]
+		};
+		return createIAMPolicy_promise(req, res, next, params, iam).then(result => {
+			console.log("Created the policy with ARN:", result.Policy.Arn);
+
+			return attachRolePolicy(req, res, next, result.Policy.Arn, iam)
+		}).catch(err => { console.log("Failed to create IAM policy:,", err); return err; })
+	}
+}
+
+const attachRolePolicy = function(req, res, next, ARN, iam) {
+	let params = {
+		PolicyArn: ARN,
+		RoleName: roleName
+	}
+	return new Promise((resolve, reject) => {
+		iam.attachRolePolicy(params, function(err, data) {
+  			if (err) {
+  				console.log("Error attaching policy to Role:" + err, err.stack); // an error occurred
+  				reject(err)
+  			}
+  			else {
+  				console.log("Attach policy success:" + data);           // successful response
+  				resolve(data);
+  			}
+		});		
+	}); 
+}
+
+
+const createIAMRole_promise = function(req, res, next, params, iam) {
+	return new Promise((resolve, reject) => {
+		iam.createRole(params, function(err, data) {
+  			if (err) {
+  				console.log("Error creating IAM Role:" + err, err.stack); // an error occurred
+  				reject(err)
+  			}
+  			else {
+  				console.log("Create role success:" + data);           // successful response
+  				resolve(data);
+  			}
+		});		
+	});
+}
+
+
+// Says this new role can be assumed by Lambda Execution ARN
+const getIAMTrustPolicy = function() {
+	return `{
+	    "Version": "2012-10-17",
+	    "Statement": [
+	        {
+	            "Effect": "Allow",
+	            "Principal": {
+	                "AWS": "${lambdaARN}"
+	            },
+	            "Action": "sts:AssumeRole"
+	        }
+	    ]
+	}`
+}
+
 exports.createIAMRole = function(req, res, next) {
 	let user_info = req.user_info;
 	console.log("Creating the IAM role.")
 	return db.collection('users').doc(user_info.id).get().then(userRef => {
 		let params = {
-		 	AssumeRolePolicyDocument: getIAMPolicyGrantS3Access(userRef.get("s3BucketName")),
-		 	RoleName: 'ImageFix-Lambda-S3-Accessor', /* required */
+		 	AssumeRolePolicyDocument: getIAMTrustPolicy(),
+		 	RoleName: roleName, /* required */
 		 	Description: 'Executes Image optimizations on your S3 buckets',
 		 	MaxSessionDuration: '43200',
 		 	Path: '/',
