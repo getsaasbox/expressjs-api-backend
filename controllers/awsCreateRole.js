@@ -238,7 +238,7 @@ exports.queryIAMRoleExists = function(req, res, next) {
         });
 
         let params = {
-            RoleName: 'ImageFix-Lambda-S3-Accessor'
+            RoleName: roleName
         }
 
         return new Promise((resolve, reject) => {
@@ -306,6 +306,7 @@ const createAttachLambdaAssumeRolePolicy = function(req, res, next, userRef) {
             }, { merge: true 
         }).then(result => {
             return attachRolePolicy(req, res, next, result.Policy.Arn, iam, config.lambdaRole).then(result => {
+                console.log("Attached policy: " + result.Policy.Arn + " to lambda role: ", config.lambdaRole)
                 return 0;
             }).catch(err => {
                 console.log("Failed attaching the policy to Lambda role.")
