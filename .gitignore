@@ -1,6 +1,5 @@
 node_modules
 config/imagefix-firestore-keys.json
-config/cloud.js
 .dotenv
 .env
 
