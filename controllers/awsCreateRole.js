@@ -96,7 +96,12 @@ exports.createAttachIAMPolicy = function(req, res, next) {
         return createIAMPolicy_promise(req, res, next, params, iam).then(result => {
             console.log("Created the policy with ARN:", result.Policy.Arn);
 
-            return attachRolePolicy(req, res, next, result.Policy.Arn, iam);
+            return attachRolePolicy(req, res, next, result.Policy.Arn, iam).then(result => {
+                return 0
+            }).catch(err => {
+                console.log("Failed attaching the policy to IAM user.")
+                return err;
+            })
         }).catch(err => { console.log("Failed to create IAM policy:,", err); return err; })
     })
 }
