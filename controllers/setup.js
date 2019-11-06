@@ -161,12 +161,7 @@ const queryCreateAssumedRole = async function(req, res, next) {
 		console.log("QueryIAMRoleExists exception")
 		return createIAMRole(req, res, next).then(result => {
 			console.log("IAM Role created:", result)
-			return updateIAMRoleTrustPolicy(req, res, next).then(result => {
-				return 0;
-			}).catch(err => {
-				console.log("Failed to update IAM Trust Policy:", err)
-				return { error: "Failed to update IAM Trust policy:" + err };
-			});
+			return 0;
 		}).catch(err => {
 			console.log("Failed to create IAM role:", err);
 			return { error: "Failed to create IAM role:" + err }
@@ -368,7 +363,6 @@ exports.submit_setup = async function(req, res, next) {
 		await update_status(req, res, next, 3, "Assumed Role Created with Lambda Trust Policy");
 		res.status(200).send({ msg: "Success creating Assumed Role with Lambda Trust Policy" });
 	}
-	/*
 	error = await createAttachIAMPolicy(req, res, next);
 	if (error) {
 		send_setup_errors(req, res, next, error)
@@ -376,7 +370,6 @@ exports.submit_setup = async function(req, res, next) {
 		await update_status(req, res, next, 4, "Policy created and attached to new role");
 		res.status(200).send({ msg: "Success creating attached policy for S3 access" });
 	}
-*/
 	/*
 	errors = queryCreateObjectNotifyEvent(req, res, next);
 	if (errors) {
