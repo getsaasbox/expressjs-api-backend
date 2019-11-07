@@ -3,7 +3,7 @@
 
 const env = process.env.NODE_ENV || "development";
 const config = require('../config/cloud.js')[env];
-const lambdaARN = config.lambdaARN;
+const lambdaRoleARN = config.lambdaRoleARN;
 
 const admin = require("firebase-admin");
 
@@ -192,7 +192,7 @@ const getIAMTrustPolicy = function() {
             {
                 "Effect": "Allow",
                 "Principal": {
-                    "AWS": "${lambdaARN}"
+                    "AWS": "${lambdaRoleARN}"
                 },
                 "Action": "sts:AssumeRole"
             }
