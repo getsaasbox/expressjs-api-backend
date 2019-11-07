@@ -348,7 +348,8 @@ const addPermissionToInvokeLambda_promise = function(req, res, next, lambda, buc
         FunctionName: functionName, 
         Principal: "s3.amazonaws.com", 
         SourceAccount: account, 
-        SourceArn: `arn:aws:s3:::${bucket}/*`, 
+        // Warning: docs say use bucket/* but this doesn't work, correct way is to use just bucket
+        SourceArn: `arn:aws:s3:::${bucket}`, 
         StatementId: statementId
     };
     return new Promise((resolve, reject) => {
