@@ -325,7 +325,7 @@ exports.submit_setup = async function(req, res, next) {
 
 	try {
 		await queryCreateObjectNotifyEvent(req, res, next);
-		await update_status(req, res, next, 7, "Created notifications from S3 to Lambda")
+		await update_status(req, res, next, 7, "Created notifications from S3 to Lambda. Setup is complete.")
 		res.status(200).send({ msg: "Setup Complete." });
 	} catch (errors) {
 		console.log("Error setting up notifications on S3 bucket: ", errors);

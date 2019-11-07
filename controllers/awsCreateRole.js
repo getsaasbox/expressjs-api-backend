@@ -468,6 +468,7 @@ const createObjectNotifyEvent_promise = function(req, res, next, s3, bucketName)
             } else {
                 console.log("Success setting up notification from S3 to Lambda.");
                 console.log(data);
+                resolve(data);
             }
         });
     });
