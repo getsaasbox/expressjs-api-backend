@@ -366,6 +366,16 @@ const addPermissionToInvokeLambda_promise = function(req, res, next, lambda, buc
 
 const functionName = "ImageFix";
 
+const permissionToInvokeLambdaStatementExists = function(req, res, next, userRef, statement) {
+    return userRef.get("LambdaPermissionsStatementId").then(statementId => {
+        // This statememt was previously added, for this account andb bucket.
+        if (statementId == statement)
+            return true;
+        else 
+            return false;
+    })
+}
+
 // TODO: Check permission does not exist.
 exports.queryAddPermissionToInvokeLambda = async function(req, res, next) {
     let user_info = req.user_info;
@@ -377,18 +387,27 @@ exports.queryAddPermissionToInvokeLambda = async function(req, res, next) {
     });
 
     return db.collection('users').doc(user_info.id).get().then(userRef => {
+
         let bucket = userRef.get("s3Bucketname");
         let account = userRef.get("accountId");
         let statementId = account + "-" + bucket;
 
-        return addPermissionToInvokeLambda_promise(req, res, next, lambda, bucket, account, statementId).then(result => {
-            console.log("Success adding permission to invoke lambda from S3 bucket");
-            return db.collection('users').doc(user_info.id).set({LambdaPermissionStatementId : result.Statement});
-
-        }).catch(err => {
-            console.log("Error adding permission to invoke lambda from s3. Error: ", err);
-            return err;
-        })
+        return permissionToInvokeLambdaStatementExists(req, res, next, statement).then(exists => {
+            if (exists) {
+                console.log("Lambda Invoke Permission already exists for this S3 bucket/account. StatementId: ", statementId);
+                return 0;
+            } else {
+                return addPermissionToInvokeLambda_promise(req, res, next, lambda, bucket, account, statementId).then(result => {
+                    console.log("Success adding permission to invoke lambda from S3 bucket");
+                    return db.collection('users').doc(user_info.id).set({
+                        LambdaPermissionStatementId : result.Statement
+                    }, { merge: true });
+                }).catch(err => {
+                    console.log("Error adding permission to invoke lambda from s3. Error: ", err);
+                    return err;
+                })
+            }
+        });
     });
 }
 
@@ -415,7 +434,7 @@ const createObjectNotifyEvent_promise = function(req, res, next, s3, bucketName)
                         }]
                     }
                 },
-                Id: 'STRING_VALUE'
+                Id: functionName
             }],
         }
     };
@@ -437,9 +456,9 @@ const createObjectNotifyEvent_promise = function(req, res, next, s3, bucketName)
 exports.queryCreateObjectNotifyEvent = async function(req, res, next) {
     let user_info = req.user_info;
     return db.collection('users').doc(user_info.id).get().then(userRef => {
-        let s3 = new AWS.s3({
+        let s3 = new AWS.S3({
             accessKeyId: userRef.get('accessKeyId'),
-            secretAccessKey: userRef.get('accessKeySecret')
+            secretAccessKey: userRef.get('accessKeySecret'),
         });
         return createObjectNotifyEvent_promise(req, res, next, s3, userRef.get("s3BucketName"));
     });
