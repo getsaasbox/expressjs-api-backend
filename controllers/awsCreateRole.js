@@ -440,7 +440,7 @@ exports.queryCreateObjectNotifyEvent = async function(req, res, next) {
             accessKeyId: userRef.get('accessKeyId'),
             secretAccessKey: userRef.get('accessKeySecret')
         });
-        return createObjectNotifyEvent_promise(req, res, next, s3, userRef.get("s3BucketName")).
+        return createObjectNotifyEvent_promise(req, res, next, s3, userRef.get("s3BucketName"));
     });
 }
 
