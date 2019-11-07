@@ -372,7 +372,8 @@ exports.queryAddPermissionToInvokeLambda = async function(req, res, next) {
 
     let lambda = new AWS.Lambda({
         accessKeyId: config.awsLambdaAssumeRoleAccessKeyId,
-        secretAccessKey: config.awsLambdaAssumeRoleSecret
+        secretAccessKey: config.awsLambdaAssumeRoleSecret,
+        region: "us-west-1"
     });
 
     return db.collection('users').doc(user_info.id).get().then(userRef => {
