@@ -367,7 +367,7 @@ const addPermissionToInvokeLambda_promise = function(req, res, next, lambda, buc
 const functionName = "ImageFix";
 
 const permissionToInvokeLambdaStatementExists = function(req, res, next, userRef, statement) {
-    return userRef.get("LambdaPermissionsStatementId").then(statementId => {
+    return userRef.get("LambdaPermissionStatementId").then(statementId => {
         // This statememt was previously added, for this account andb bucket.
         if (statementId == statement)
             return true;
@@ -388,11 +388,11 @@ exports.queryAddPermissionToInvokeLambda = async function(req, res, next) {
 
     return db.collection('users').doc(user_info.id).get().then(userRef => {
 
-        let bucket = userRef.get("s3Bucketname");
+        let bucket = userRef.get("s3BucketName");
         let account = userRef.get("accountId");
         let statementId = account + "-" + bucket;
 
-        return permissionToInvokeLambdaStatementExists(req, res, next, statementId).then(exists => {
+        return permissionToInvokeLambdaStatementExists(req, res, next, userRef, statementId).then(exists => {
             if (exists) {
                 console.log("Lambda Invoke Permission already exists for this S3 bucket/account. StatementId: ", statementId);
                 return 0;
@@ -400,7 +400,8 @@ exports.queryAddPermissionToInvokeLambda = async function(req, res, next) {
                 return addPermissionToInvokeLambda_promise(req, res, next, lambda, bucket, account, statementId).then(result => {
                     console.log("Success adding permission to invoke lambda from S3 bucket");
                     return db.collection('users').doc(user_info.id).set({
-                        LambdaPermissionStatementId : result.Statement
+                        LambdaPermissionStatementId : statementId,
+                        LambdaPermissionStatement: result.Statement
                     }, { merge: true });
                 }).catch(err => {
                     console.log("Error adding permission to invoke lambda from s3. Error: ", err);
