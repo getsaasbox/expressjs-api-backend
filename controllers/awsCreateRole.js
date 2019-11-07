@@ -392,7 +392,7 @@ exports.queryAddPermissionToInvokeLambda = async function(req, res, next) {
         let account = userRef.get("accountId");
         let statementId = account + "-" + bucket;
 
-        return permissionToInvokeLambdaStatementExists(req, res, next, statement).then(exists => {
+        return permissionToInvokeLambdaStatementExists(req, res, next, statementId).then(exists => {
             if (exists) {
                 console.log("Lambda Invoke Permission already exists for this S3 bucket/account. StatementId: ", statementId);
                 return 0;
@@ -423,13 +423,13 @@ const createObjectNotifyEvent_promise = function(req, res, next, s3, bucketName)
                 Filter: {
                     Key: {
                         FilterRules: [{
-                            Name: suffix,
+                            Name: "suffix",
                             Value: 'png'
                         }, {
-                            Name: suffix,
+                            Name: "suffix",
                             Value: "jpg"
                         }, {
-                            Name: suffix,
+                            Name: "suffix",
                             Value: "jpeg"
                         }]
                     }
