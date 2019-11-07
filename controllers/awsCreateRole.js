@@ -430,6 +430,34 @@ const createObjectNotifyEvent_promise = function(req, res, next, s3, bucketName)
                         }]
                     }
                 },
+            },{
+                Id: functionName + "-jpg",
+                Events: [ /* required */
+                    "s3:ObjectCreated:*",
+                ],
+                LambdaFunctionArn: config.lambdaARN, /* required */
+                Filter: {
+                    Key: {
+                        FilterRules: [{
+                            Name: "suffix",
+                            Value: 'jpg'
+                        }]
+                    }
+                },
+            },{
+                Id: functionName + "-jpeg",
+                Events: [ /* required */
+                    "s3:ObjectCreated:*",
+                ],
+                LambdaFunctionArn: config.lambdaARN, /* required */
+                Filter: {
+                    Key: {
+                        FilterRules: [{
+                            Name: "suffix",
+                            Value: 'jpeg'
+                        }]
+                    }
+                },
             }],
         }
     };

@@ -315,21 +315,24 @@ exports.submit_setup = async function(req, res, next) {
 	}
 
 	try {
-		await queryCreateObjectNotifyEvent(req, res, next);
-		await update_status(req, res, next, 6, "Created notifications from S3 to Lambda")
+		await queryAddPermissionToInvokeLambda(req, res, next);
+		await update_status(req, res, next, 6, "Set cross-account permission to notify/invoke Lambda function.")
+		
 	} catch (errors) {
 		console.log("Error setting up notifications on S3 bucket: ", errors);
 		send_setup_errors(req, res, next, errors)
 	}
 
 	try {
-		await queryAddPermissionToInvokeLambda(req, res, next);
-		await update_status(req, res, next, 7, "Set cross-account permission to notify/invoke Lambda function. Install Complete.")
+		await queryCreateObjectNotifyEvent(req, res, next);
+		await update_status(req, res, next, 7, "Created notifications from S3 to Lambda")
 		res.status(200).send({ msg: "Setup Complete." });
 	} catch (errors) {
 		console.log("Error setting up notifications on S3 bucket: ", errors);
 		send_setup_errors(req, res, next, errors)
 	}
+
+
 }
 
 exports.uninstall_setup = function(req, res, next) {
