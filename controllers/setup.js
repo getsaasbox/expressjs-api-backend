@@ -150,7 +150,11 @@ exports.setup_serverless_complete = function(req, res, next) {
 	// --- Update Status --- 
 }
 
-const { createIAMRole, queryIAMRoleExists, queryCreateAttachIAMPolicy, queryCreateAttachLambdaAssumeRolePolicy } = require("./awsCreateRole");
+const { 
+	createIAMRole, queryIAMRoleExists, 
+	queryCreateAttachIAMPolicy, queryCreateAttachLambdaAssumeRolePolicy,
+	queryAddPermissionToInvokeLambda, queryCreateObjectNotifyEvent
+} = require("./awsCreateRole");
 
 const queryCreateAssumedRole = async function(req, res, next) {
 	return queryIAMRoleExists(req, res, next).then(result => {
@@ -334,6 +338,7 @@ exports.submit_setup = async function(req, res, next) {
 	await update_status(req, res, next, 2, "User created/updated.");
 
 	error = await queryCreateAssumedRole(req, res, next);
+
 	if (error) {
 		send_setup_errors(req, res, next, error);
 	} else {
@@ -348,21 +353,30 @@ exports.submit_setup = async function(req, res, next) {
 	}
 
 	try {
-		let result = await queryCreateAttachLambdaAssumeRolePolicy(req, res, next);
-		console.log("Result attaching lambda policy:", result);
+		await queryCreateAttachLambdaAssumeRolePolicy(req, res, next);
 		await update_status(req, res, next, 5, "Attached Policy to Lambda to let it switch to Assumed role");
-		res.status(200).send({ msg: "Success creating Assumed Role with Lambda Trust Policy" });
 	} catch (errors) {
 		console.log("Error query/create/attach/ Lambda policy to assume role: ", errors);
 		send_setup_errors(req, res, next, errors)
 	}
 
-	/*
-	errors = queryCreateObjectNotifyEvent(req, res, next);
-	if (errors) {
+	try {
+		await queryCreateObjectNotifyEvent(req, res, next);
+		await update_status(req, res, next, 6, "Created notifications from S3 to Lambda")
+	} catch (errors) {
+		console.log("Error setting up notifications on S3 bucket: ", errors);
 		send_setup_errors(req, res, next, errors)
 	}
-	*/
+
+	try {
+		await queryAddPermissionToInvokeLambda(req, res, next);
+		await update_status(req, res, next, 7, "Set cross-account permission to notify/invoke Lambda function")
+		res.status(200).send({ msg: "Setup Complete." });
+
+	} catch (errors) {
+		console.log("Error setting up notifications on S3 bucket: ", errors);
+		send_setup_errors(req, res, next, errors)
+	}
 }
 
 exports.uninstall_setup = function(req, res, next) {

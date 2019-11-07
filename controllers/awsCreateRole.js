@@ -341,4 +341,41 @@ exports.queryCreateAttachLambdaAssumeRolePolicy = async function(req, res, next)
     });
 }
 
+const addPermissionToInvokeLambda_promise = function(req, res, next, bucket, account, statementId) {
+    /* This example adds a permission for an S3 bucket to invoke a Lambda function. */
+    var params = {
+        Action: "lambda:InvokeFunction", 
+        FunctionName: functionName, 
+        Principal: "s3.amazonaws.com", 
+        SourceAccount: account, 
+        SourceArn: `arn:aws:s3:::${bucket}/*`, 
+        StatementId: statementId
+    };
+    return new Promise((resolve, reject) => {
+        lambda.addPermission(params, function(err, data) {
+        if (err) {
+            console.log("Could not add permission to Lambda to be invoked by S3 bucket", err, err.stack); // an error occurred
+            reject(err)    
+        } else {
+            console.log("Added permission to Lambda to be invoked by S3 Bucket.", data)
+            resolve(data);
+        }    
+    });
+}
+
+const functionName = "ImageFix";
+exports.queryAddPermissionToInvokeLambda = function(req, res, next) {
+    let user_info = req.user_info;
+    return db.collection('users').doc(user_info.id).get().then(userRef => {
+        let bucket = userRef.get("s3Bucketname");
+        let account = userRef.get("accountId");
+        let statementId = bucket + account;
+
+        return addPermissionToInvokeLambda_promise(req, res, next, bucket, account, statementId)
+    });
+}
+
+exports.queryCreateObjectNotifyEvent = function(req, res, next) {
+
+}
 
