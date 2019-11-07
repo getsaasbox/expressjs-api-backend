@@ -417,7 +417,7 @@ const createObjectNotifyEvent_promise = function(req, res, next, s3, bucketName)
         Bucket: bucketName, 
         NotificationConfiguration: {
             LambdaFunctionConfigurations: [{
-                Id: functionName + "-png"
+                Id: functionName + "-png",
                 Events: [ /* required */
                     "s3:ObjectCreated:*",
                 ],
@@ -431,7 +431,7 @@ const createObjectNotifyEvent_promise = function(req, res, next, s3, bucketName)
                     }
                 },
             },{
-                Id: functionName + "-jpg"
+                Id: functionName + "-jpg",
                 Events: [ /* required */
                     "s3:ObjectCreated:*",
                 ],
@@ -445,7 +445,7 @@ const createObjectNotifyEvent_promise = function(req, res, next, s3, bucketName)
                     }
                 },
             },{
-                Id: functionName + "-jpeg"
+                Id: functionName + "-jpeg",
                 Events: [ /* required */
                     "s3:ObjectCreated:*",
                 ],
