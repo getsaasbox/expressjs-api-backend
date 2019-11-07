@@ -341,7 +341,7 @@ exports.queryCreateAttachLambdaAssumeRolePolicy = async function(req, res, next)
     });
 }
 
-const addPermissionToInvokeLambda_promise = function(req, res, next, bucket, account, statementId) {
+const addPermissionToInvokeLambda_promise = function(req, res, next, lambda, bucket, account, statementId) {
     /* This example adds a permission for an S3 bucket to invoke a Lambda function. */
     var params = {
         Action: "lambda:InvokeFunction", 
@@ -359,23 +359,87 @@ const addPermissionToInvokeLambda_promise = function(req, res, next, bucket, acc
         } else {
             console.log("Added permission to Lambda to be invoked by S3 Bucket.", data)
             resolve(data);
-        }    
+        }
     });
 }
 
 const functionName = "ImageFix";
-exports.queryAddPermissionToInvokeLambda = function(req, res, next) {
+
+// TODO: Check permission does not exist.
+exports.queryAddPermissionToInvokeLambda = async function(req, res, next) {
     let user_info = req.user_info;
+
+    let lambda = new AWS.Lambda({
+        accessKeyId: config.awsLambdaAssumeRoleAccessKeyId,
+        secretAccessKey: config.awsLambdaAssumeRoleSecret
+    });
+
     return db.collection('users').doc(user_info.id).get().then(userRef => {
         let bucket = userRef.get("s3Bucketname");
         let account = userRef.get("accountId");
-        let statementId = bucket + account;
+        let statementId = account + "-" + bucket;
 
-        return addPermissionToInvokeLambda_promise(req, res, next, bucket, account, statementId)
+        return addPermissionToInvokeLambda_promise(req, res, next, lambda, bucket, account, statementId).then(result => {
+            console.log("Success adding permission to invoke lambda from S3 bucket");
+            return db.collection('users').doc(user_info.id).set({LambdaPermissionStatementId : result.Statement});
+            
+        }).catch(err => {
+            console.log("Error adding permission to invoke lambda from s3. Error: ", err);
+            return err;
+        })
     });
 }
 
-exports.queryCreateObjectNotifyEvent = function(req, res, next) {
+const createObjectNotifyEvent_promise = function(req, res, next, s3, bucketName) {
+    var params = {
+        Bucket: bucketName, 
+        NotificationConfiguration: {
+            LambdaFunctionConfigurations: [{
+                Events: [ /* required */
+                    "s3:ObjectCreated:*",
+                ],
+                LambdaFunctionArn: config.lambdaARN, /* required */
+                Filter: {
+                    Key: {
+                        FilterRules: [{
+                            Name: suffix,
+                            Value: 'png'
+                        }, {
+                            Name: suffix,
+                            Value: "jpg"
+                        }, {
+                            Name: suffix,
+                            Value: "jpeg"
+                        }]
+                    }
+                },
+                Id: 'STRING_VALUE'
+            }],
+        }
+    };
 
+    return new Promise((resolve, reject) => {
+        s3.putBucketNotificationConfiguration(params, function(err, data) {
+            if (err) {
+                console.log("Error setting up notification from S3 to Lambda. Error: ", err);
+                reject(err)
+            } else {
+                console.log("Success setting up notification from S3 to Lambda.");
+                console.log(data);
+            }
+        });
+    });
+}
+
+// TODO: Check notify event does not exist.
+exports.queryCreateObjectNotifyEvent = async function(req, res, next) {
+    let user_info = req.user_info;
+    return db.collection('users').doc(user_info.id).get().then(userRef => {
+        let s3 = new AWS.s3({
+            accessKeyId: userRef.get('accessKeyId'),
+            secretAccessKey: userRef.get('accessKeySecret')
+        });
+        return createObjectNotifyEvent_promise(req, res, next, s3, userRef.get("s3BucketName")).
+    });
 }
 

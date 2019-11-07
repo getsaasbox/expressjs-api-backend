@@ -66,7 +66,8 @@ const createNewUserDoc = async function(req, res, next, user_info) {
 				install_status_code: 0,
 				install_status_msg: "Install Not Started",
 				LambdaAssumeRolePolicy: "",
-				s3BucketIAMPolicy: ""
+				s3BucketIAMPolicy: "",
+				LambdaPermissionStatementId: ""
 			}).then(userRef => {
 				return 0;
 			}).catch(err => {
@@ -170,53 +171,6 @@ const queryCreateAssumedRole = async function(req, res, next) {
 			return { error: "Failed to create IAM role:" + err }
 		})
 	});
-}
-
-/** Attach Lambda Policy **/
-const queryLambdaPolicyAttached = function(req, res, next) {
-
-}
-
-/** Lambda Policy **/
-const attachLambdaPolicy = function(req, res, next) {
-	let errors = {}
-	// Call AWS to create assumed role.
-
-	update_status({ status: 1, msg: "Lambda Policy Attached."});
-	return 0;
-}
-
-const queryAttachLambdaPolicy = function(req, res, next) {
-
-	if (queryLambdaPolicyExists(req, res, next)) {
-		return 0;
-	} else {
-		return attachLambdaPolicy(req, res, next);
-	}
-}
-
-/** Set up S3 bucket to Lambda notification **/
-const queryObjectNotifyEventExists = function(req, res, next) {
-
-}
-
-/** Lambda Policy **/
-const createObjectNotifyEvent = function(req, res, next) {
-	let errors = {}
-	// Call AWS to create assumed role.
-
-	update_status({ status: 12, msg: "S3 Object Create Notify Event Created"});
-	return 0;
-}
-
-
-const queryCreateObjectNotifyEvent = function(req, res, next) {
-
-	if (queryObjectNotifyEventExists(req, res, next)) {
-		return 0;
-	} else {
-		return createObjectNotifyEvent(req, res, next);
-	}
 }
 
 const s3headBucket_promise = function(req, res, next) {
@@ -370,9 +324,8 @@ exports.submit_setup = async function(req, res, next) {
 
 	try {
 		await queryAddPermissionToInvokeLambda(req, res, next);
-		await update_status(req, res, next, 7, "Set cross-account permission to notify/invoke Lambda function")
+		await update_status(req, res, next, 7, "Set cross-account permission to notify/invoke Lambda function. Install Complete.")
 		res.status(200).send({ msg: "Setup Complete." });
-
 	} catch (errors) {
 		console.log("Error setting up notifications on S3 bucket: ", errors);
 		send_setup_errors(req, res, next, errors)
