@@ -353,13 +353,14 @@ const addPermissionToInvokeLambda_promise = function(req, res, next, lambda, buc
     };
     return new Promise((resolve, reject) => {
         lambda.addPermission(params, function(err, data) {
-        if (err) {
-            console.log("Could not add permission to Lambda to be invoked by S3 bucket", err, err.stack); // an error occurred
-            reject(err)    
-        } else {
-            console.log("Added permission to Lambda to be invoked by S3 Bucket.", data)
-            resolve(data);
-        }
+            if (err) {
+                console.log("Could not add permission to Lambda to be invoked by S3 bucket", err, err.stack); // an error occurred
+                reject(err)    
+            } else {
+                console.log("Added permission to Lambda to be invoked by S3 Bucket.", data)
+                resolve(data);
+            }
+        })
     });
 }
 
@@ -382,7 +383,7 @@ exports.queryAddPermissionToInvokeLambda = async function(req, res, next) {
         return addPermissionToInvokeLambda_promise(req, res, next, lambda, bucket, account, statementId).then(result => {
             console.log("Success adding permission to invoke lambda from S3 bucket");
             return db.collection('users').doc(user_info.id).set({LambdaPermissionStatementId : result.Statement});
-            
+
         }).catch(err => {
             console.log("Error adding permission to invoke lambda from s3. Error: ", err);
             return err;
