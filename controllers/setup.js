@@ -55,6 +55,7 @@ const jwtTokenData = function(req, res, next) {
 	s3BucketName: ""
 }
 */
+
 const createNewUserDoc = async function(req, res, next, user_info) {
 	return db.collection('users').doc(user_info.id).get().then(user => {
 		if (!user.exists) {
@@ -94,25 +95,31 @@ const createUpdateUserDoc = async function(req, res, next, user_info) {
 
 // Query state of setup
 exports.query_setup_state = async function(req, res, next) {
-
 	// Verify JWT token:
 	let user_info = jwtTokenData(req, res, next);
 
-	let error = await createNewUserDoc(req, res, next, user_info);
-	
-	if (error) {
+	try {
+		await createNewUserDoc(req, res, next, user_info);
+
+		return db.collection('users').doc(user_info.id).get().then(user => {
+			res.status(200).send({
+				status: user.get("install_status_code"), 
+				aws_creds: {
+					accessKeyId: user.get("accessKeyId"),
+					accessKeySecret: user.get("accessKeySecret"),
+					accountId: user.get("accountId"),
+					s3BucketName: user.get("s3BucketName")
+				},
+				msg: user.get("install_status_msg") 
+			})			
+		});
+
+	} catch(error) {
+		console.log("Error querying setup state.\n");
 		send_setup_errors(req, res, next, error);
 	}
 
-	return db.collection('users').doc(user_info.id).get().then(user => {
-		res.status(200).send({
-			status: user.get("install_status_code"), 
-			user: user_info, 
-			msg: user.get("install_status_msg") 
-		})			
-	});
 }
-
 
 exports.setup_serverless_complete = function(req, res, next) {
 	// Fetch Customer Account ID, Access Key ID, and Secret

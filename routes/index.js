@@ -5,7 +5,6 @@ let setup = require("../controllers/setup");
 
 
 router.get("/query-setup-state", setup.query_setup_state)
-
 router.post("/submit-setup", setup.submit_setup)
 
 /* GET home page. */
