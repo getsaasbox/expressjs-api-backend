@@ -162,7 +162,7 @@ exports.deleteIAMPolicy = async function(req, res, next) {
         let policy = userRef.get("s3BucketIAMPolicy");
         return detachRolePolicy(req, res, next, policy, iam, roleName).then(detachedResult => {
             return deleteIAMPolicy_promise(req, res, next, iam, policy).then(success => {
-                return userRef.set({
+                return db.collection('users').doc(user_info.id).set({
                     s3BucketIAMPolicy: "",
                 }, {
                     merge: true
@@ -467,7 +467,7 @@ exports.deleteLambdaAssumeRolePolicy = async function(req, res, next) {
         // We need a detach role policy first from config.LambdaRole
         return detachRolePolicy(req, res, next, policy, iam, config.lambdaRole).then(detachedResult => {
             return deleteLambdaAssumeRolePolicy_promise(req, res, next, iam, policy).then(success => {
-                return userRef.set({
+                return db.collection('users').doc(user_info.id).set({
                     LambdaAssumeRolePolicy: "",
                 }, {
                     merge: true
@@ -577,7 +577,7 @@ exports.deletePermissionToInvokeLambda = async function(req, res, next) {
             StatementId: statementId
         };
         return deletePermissionToInvokeLambda_promise(req, res, next, lambda, params).then(success => {
-            return userRef.set({
+            return db.collection('users').doc(user_info.id).set({
                 LambdaPermissionStatemendId: "",
                 LambdaPermissionStatement: ""
             }, {
