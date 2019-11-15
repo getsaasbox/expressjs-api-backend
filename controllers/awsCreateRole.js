@@ -52,7 +52,10 @@ const getIAMPolicyGrantS3Access = function(bucketName) {
             "Effect": "Allow",
             "Action": [
                 "s3:GetObject",
-                "s3:PutObject"
+                "s3:PutObject",
+                "s3:PutObjectAcl",
+                "s3:GetObjectAcl",
+                "s3:DeleteObject"
             ],
             "Resource": "arn:aws:s3:::${bucketName}/*"
         }
