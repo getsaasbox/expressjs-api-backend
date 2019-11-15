@@ -309,7 +309,7 @@ const cleanUserDoc = function(req, res, next) {
 	})
 }
 
-exports.uninstall_setup = function(req, res, next) {
+exports.uninstall_setup = async function(req, res, next) {
 	let user_info = jwtTokenData(req, res, next);
 	req.user_info = user_info;
 
