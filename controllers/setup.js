@@ -290,20 +290,26 @@ exports.submit_setup = async function(req, res, next) {
 	if (!isEmpty(errors)) {
 		send_setup_errors(req, res, next, errors)
 	}
-	await update_status(req, res, next, 1, "Pre-install checks complete.");
+	
+	try {
+		await update_status(req, res, next, 1, "Pre-install checks complete.");	
+	} catch (errors) {
+		console.log("Errors during pre-install checks: ", errors);
+		send_setup_errors(req, res, next, errors)
+	}
 
-	let error = await createUpdateUserDoc(req, res, next, user_info)
-	if (error) {
+	try {
+		await createUpdateUserDoc(req, res, next, user_info);
+		await update_status(req, res, next, 2, "User created/updated.");
+	} catch (errors) {
 		send_setup_errors(req, res, next, error);
 	}
-	await update_status(req, res, next, 2, "User created/updated.");
 
-	error = await queryCreateAssumedRole(req, res, next);
-
-	if (error) {
-		send_setup_errors(req, res, next, error);
-	} else {
+	try {
+		await queryCreateAssumedRole(req, res, next);
 		await update_status(req, res, next, 3, "Assumed Role Created with Lambda Trust Policy");
+	} catch (errors) {
+		send_setup_errors(req, res, next, error);
 	}
 
 	try {
@@ -338,8 +344,6 @@ exports.submit_setup = async function(req, res, next) {
 		console.log("Error setting up notifications on S3 bucket: ", errors);
 		send_setup_errors(req, res, next, errors)
 	}
-
-
 }
 
 exports.uninstall_setup = function(req, res, next) {

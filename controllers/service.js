@@ -32,7 +32,6 @@ exports.fetch_optimization_records = function(req, res, next) {
 
 		let opRecords = [];
 
-
 		histories.forEach(snap => {
 			opRecords.push(snap.data());
 		})
