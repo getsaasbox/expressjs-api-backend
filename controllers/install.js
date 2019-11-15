@@ -313,11 +313,13 @@ exports.deleteIAMRole = function(req, res, next) {
     let params = {
         RoleName: roleName
     };
-    let iam = new AWS.IAM({
-        accessKeyId: userRef.get('accessKeyId'),
-        secretAccessKey: userRef.get('accessKeySecret')
+    return db.collection('users').doc(user_info.id).get().then(userRef => {
+        let iam = new AWS.IAM({
+            accessKeyId: userRef.get('accessKeyId'),
+            secretAccessKey: userRef.get('accessKeySecret')
+        });
+        return deleteIAMRole_promise(req, res, next, params, iam);
     });
-    return deleteIAMRole_promise(req, res, next, params, iam);
 }
 
 exports.queryIAMRoleExists = function(req, res, next) {
