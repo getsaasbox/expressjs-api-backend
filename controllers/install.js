@@ -80,7 +80,11 @@ const createIAMPolicy_promise = function(req, res, next, params, iam) {
         });     
     });
 }
- 
+
+const deleteIAMPolicy_promise = function(req, res, next, params, iam) {
+
+}
+
 const queryIAMPolicyExists = function(req, res, next) {
     let user_info = req.user_info;
 
@@ -129,6 +133,10 @@ const createAttachIAMPolicy = function(req, res, next, userRef) {
         console.log("Failed to create/attach IAM policy:,", err);
         return err;
     })
+}
+
+exports deleteIAMPolicy = async function(req, res, next) {
+
 }
 
 /*
@@ -186,6 +194,9 @@ const createIAMRole_promise = function(req, res, next, params, iam) {
     });
 }
 
+const deleteIAMRole_promise = function(req, res, next, params, iam) {
+
+}
 
 // Says this new role can be assumed by Lambda Execution ARN
 const getIAMTrustPolicy = function() {
@@ -230,6 +241,10 @@ exports.createIAMRole = function(req, res, next) {
         console.log("Creating IAM role failed.", err);
         return err;
     })
+}
+
+exports.deleteIAMRole = function(req, res, next) {
+
 }
 
 exports.queryIAMRoleExists = function(req, res, next) {
@@ -328,6 +343,10 @@ const createAttachLambdaAssumeRolePolicy = function(req, res, next, userRef) {
     })
 }
 
+const deleteLambdaAssumeRolePolicy_promise = function(req, res, next, userRef) {
+
+}
+
 exports.queryCreateAttachLambdaAssumeRolePolicy = async function(req, res, next) {
     let user_info = req.user_info;
 
@@ -342,6 +361,10 @@ exports.queryCreateAttachLambdaAssumeRolePolicy = async function(req, res, next)
             }
         });
     });
+}
+
+exports.deleteLambdaAssumeRolePolicy = async function(req, res, next) {
+
 }
 
 const addPermissionToInvokeLambda_promise = function(req, res, next, lambda, bucket, account, statementId) {
@@ -362,6 +385,20 @@ const addPermissionToInvokeLambda_promise = function(req, res, next, lambda, buc
                 reject(err)    
             } else {
                 console.log("Added permission to Lambda to be invoked by S3 Bucket.", data)
+                resolve(data);
+            }
+        })
+    });
+}
+
+const deletePermissionToInvokeLambda_promise = function(req, res, next, lambda, params) {
+    return new Promise((resolve, reject) => {
+        lambda.removePermission(params, function(err, data) {
+            if (err) {
+                console.log("Error, Could not remove permission from Lambda that lets invokations from S3 bucket. Error: ", err, err.stack); // an error occurred
+                reject(err)    
+            } else {
+                console.log("Successfully removed permission from Lambda that let it to be invoked by S3 Bucket.", data)
                 resolve(data);
             }
         })
@@ -390,7 +427,6 @@ exports.queryAddPermissionToInvokeLambda = async function(req, res, next) {
     });
 
     return db.collection('users').doc(user_info.id).get().then(userRef => {
-
         let bucket = userRef.get("s3BucketName");
         let account = userRef.get("accountId");
         let statementId = account + "-" + bucket;
@@ -410,6 +446,24 @@ exports.queryAddPermissionToInvokeLambda = async function(req, res, next) {
                 return err;
             })
         }
+    });
+}
+
+exports deletePermissionToInvokeLambda = async function(req, res, next) {
+    let lambda = new AWS.Lambda({
+        accessKeyId: config.awsLambdaAssumeRoleAccessKeyId,
+        secretAccessKey: config.awsLambdaAssumeRoleSecret,
+        region: "us-west-1"
+    });
+
+    let user_info = req.user_info;
+    return db.collection('users').doc(user_info.id).get().then(userRef => {
+        let statementId = userRef.get("LambdaPermissionStatementId");
+        let params = {
+            FunctionName: functionName,
+            StatementId: statementId
+        };
+        return deletePermissionToInvokeLambda_promise(req, res, next, lambda, params);
     });
 }
 
@@ -477,6 +531,62 @@ const createObjectNotifyEvent_promise = function(req, res, next, s3, bucketName)
     });
 }
 
+const getBucketNotificationConfig_promise = function(req, res, next, s3, bucketName) {
+    let params = {
+        Bucket: bucketName
+    };
+    return new Promise((resolve, reject) => {
+        s3.getBucketNotificationConfiguration(params, function(err, data) {
+            if (err) {
+                console.log("Error getting notification configuration of S3 bucket. Error: ", err);
+                reject(err)
+            } else {
+                console.log("Success getting notification configuration of S3 bucket.");
+                console.log(data);
+                resolve(data);
+            }
+        });
+    });
+
+}
+
+// This is a read-modify-write operation. Deletes our Lambda function notify events from a notify event array.
+// It does it by reading the existing config and modifying it, so we don't delete other events. ATM you can't individually delete notify events.
+const deleteObjectNotifyEvent_promise = function(req, res, next, s3, bucketName) {
+    return getBucketNotificationConfig_promise(req, res, next, s3, bucketName).then(bucketNotifyConfig => {
+        // Find the ids to be deleted: 
+        let LFConfigs = bucketNotifyConfig.LambdaFunctionConfigurations.map(lfconfig => {
+            if (!lfconfig.Id.startsWith(functionName)) {
+                return lfconfig;
+            }
+        });
+
+        // Filtered out the configs notifying our Lambdas.
+        bucketNotifyConfig.LambdaFunctionConfigurations = LFConfigs;
+
+        console.log("Updated bucket notify config with Imagefix lambda notify configs deleted:", bucketNotifyConfig);
+        let params = {
+            Bucket: bucketName,
+            NotificationConfiguration: bucketNotifyConfig
+        }
+
+        return new Promise((resolve, reject) => {
+            s3.putBucketNotificationConfiguration(params, function(err, data) {
+                if (err) {
+                    console.log("Error setting bucket notification configuration with Imagefix lambda notifications removed. Error: ", err);
+                    reject(err)
+                } else {
+                    console.log("Success setting bucket notification configuration with Imagefix lambda notifications removed.");
+                    console.log(data);
+                    resolve(data);
+                }
+            });
+        });
+    });
+}
+
+
+
 // TODO: Check notify event does not exist.
 exports.queryCreateObjectNotifyEvent = async function(req, res, next) {
     let user_info = req.user_info;
@@ -486,6 +596,18 @@ exports.queryCreateObjectNotifyEvent = async function(req, res, next) {
             secretAccessKey: userRef.get('accessKeySecret'),
         });
         return createObjectNotifyEvent_promise(req, res, next, s3, userRef.get("s3BucketName"));
+    });
+}
+
+
+exports.deleteObjectNotifyEvent = async function(req, res, next) {
+    let user_info = req.user_info;
+    return db.collection('users').doc(user_info.id).get().then(userRef => {
+        let s3 = new AWS.S3({
+            accessKeyId: userRef.get('accessKeyId'),
+            secretAccessKey: userRef.get('accessKeySecret'),
+        });
+        return deleteObjectNotifyEvent_promise(req, res, next, s3, userRef.get("s3BucketName"));
     });
 }
 

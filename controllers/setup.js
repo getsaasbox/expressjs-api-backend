@@ -43,19 +43,6 @@ const jwtTokenData = function(req, res, next) {
 	return decoded;
 }
 
-
-/* A user document: 
-{
-	accessKeyId: "",
-	accessKeySecret: "",
-	accountId: "",
-	install_status_code: "",
-	install_status_msg" ""
-	quota: "",
-	s3BucketName: ""
-}
-*/
-
 const createNewUserDoc = async function(req, res, next, user_info) {
 	return db.collection('users').doc(user_info.id).get().then(user => {
 		if (!user.exists) {
@@ -121,48 +108,11 @@ exports.query_setup_state = async function(req, res, next) {
 
 }
 
-exports.setup_serverless_complete = function(req, res, next) {
-	// Fetch Customer Account ID, Access Key ID, and Secret
-
-	// Query Assumed Role Exists
-	// No -> Create Assumed Role
-
-	// --- Update Status --- 
-
-	// Query Assumed Role has S3 access.
-	// No -> Add S3 access to Assumed Role
-
-	// --- Update Status --- 
-
-	// Query Trust Policy exists, pointing at Lambda ARN
-	// No -> Create Trust Policy in assumed Role.
-
-	// --- Update Status --- 
-
-	// Fetch Service Account ID, Access Key ID, and Secret
-
-	// --- Update Status --- 
-
-	// Attach IAM policy to Lambda execution role
-	// - Include Customer account ID and assumed role.
-
-	// --- Update Status --- 
-
-	// Query target S3 bucket exists on customer account.
-
-	// --- Update Status --- 
-
-	// Create object notification event on target S3 bucket
-	// - Include Service Account Lambda ARN on request.
-
-	// --- Update Status --- 
-}
-
 const { 
 	createIAMRole, queryIAMRoleExists, 
 	queryCreateAttachIAMPolicy, queryCreateAttachLambdaAssumeRolePolicy,
 	queryAddPermissionToInvokeLambda, queryCreateObjectNotifyEvent
-} = require("./awsCreateRole");
+} = require("./install");
 
 const queryCreateAssumedRole = async function(req, res, next) {
 	return queryIAMRoleExists(req, res, next).then(result => {
@@ -290,7 +240,7 @@ exports.submit_setup = async function(req, res, next) {
 	if (!isEmpty(errors)) {
 		send_setup_errors(req, res, next, errors)
 	}
-	
+
 	try {
 		await update_status(req, res, next, 1, "Pre-install checks complete.");	
 	} catch (errors) {
@@ -346,7 +296,63 @@ exports.submit_setup = async function(req, res, next) {
 	}
 }
 
+
+const { 
+	deleteIAMRole, 
+	deleteIAMPolicy, deleteLambdaAssumeRolePolicy,
+	deletePermissionToInvokeLambda, deleteObjectNotifyEvent
+} = require("./install");
+
 exports.uninstall_setup = function(req, res, next) {
-	
+	let user_info = jwtTokenData(req, res, next);
+	req.user_info = user_info;
+
+	// Delete object notify event
+	try {
+		await deleteObjectNotifyEvent(req, res, next);
+		await update_status(req, res, next, 10, "Deleted Object Notify event from S3 bucket");
+	} catch (errors) {
+		console.log("Error deleting object notify event from S3 bucket: ", errors);
+		send_setup_errors(req, res, next, errors)
+	}
+
+	// Delete Lambda invoke permission from lambda
+	try {
+		await deletePermissionToInvokeLambda(req, res, next);
+		await update_status(req, res, next, 10, "Deleted Permission to invoke Lambda");
+	} catch (errors) {
+		console.log("Error deleting Permission to invoke Lambda: ", errors);
+		send_setup_errors(req, res, next, errors)
+	}
+
+	// Delete Assume Role policy from Lambda.
+	try {
+		await deleteLambdaAssumeRolePolicy(req, res, next);
+		await update_status(req, res, next, 10, "Deleted Lambda Assume Role Policy");
+	} catch (errors) {
+		console.log("Error deleting Lambda Assume Role Policy: ", errors);
+		send_setup_errors(req, res, next, errors)
+	}
+
+	// Delete S3 IAM policy
+	try {
+		await deleteIAMPolicy(req, res, next);
+		await update_status(req, res, next, 10, "Deleted IAM Policy.");
+	} catch (errors) {
+		console.log("Error deleting IAM Policy: ", errors);
+		send_setup_errors(req, res, next, errors)
+	}
+
+	// Delete Assumed role
+	try {
+		await deleteIAMRole(req, res, next);
+		await update_status(req, res, next, 10, "Deleted Assumed Role for Lambda to access S3");
+	} catch (errors) {
+		console.log("Error deleting Assumed Role for Lambda to access S3: ", errors);
+		send_setup_errors(req, res, next, errors)
+	}
+	// Clean User Doc
+
+	res.status(200).send({ msg: "Uninstall complete. (All permissions/notifications regarding ImageFix are deleted from your account." });
 }
 
