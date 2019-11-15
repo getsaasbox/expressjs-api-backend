@@ -25,10 +25,10 @@ const jwtTokenData = function(req, res, next) {
 exports.fetch_optimization_records = function(req, res, next) {
 	let user_info = jwtTokenData(req, res, next);
 
-	return db.collection('users').doc(user_info.id).collection('history').get().then(historyRef => {
-		//let histories = historyRef.orderBy('createdAt', 'desc').limit(10).get();
+	let historiesRef = db.collection('users').doc(user_info.id).collection('history');
 
-		let histories = historyRef.orderBy('createdAt', 'desc').limit(10).get();
+	//return historiesRef.orderBy('createdAt', 'desc').limit(10).get()
+	return historiesRef.limit(10).get().then(histories => {
 
 		let opRecords = [];
 
