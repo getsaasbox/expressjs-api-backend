@@ -303,6 +303,12 @@ const {
 	deletePermissionToInvokeLambda, deleteObjectNotifyEvent
 } = require("./install");
 
+const cleanUserDoc = function(req, res, next) {
+	return db.collection('users').doc(req.user_info.id).set({
+
+	})
+}
+
 exports.uninstall_setup = function(req, res, next) {
 	let user_info = jwtTokenData(req, res, next);
 	req.user_info = user_info;
@@ -310,7 +316,7 @@ exports.uninstall_setup = function(req, res, next) {
 	// Delete object notify event
 	try {
 		await deleteObjectNotifyEvent(req, res, next);
-		await update_status(req, res, next, 10, "Deleted Object Notify event from S3 bucket");
+		await update_status(req, res, next, 6, "Deleted Object Notify event from S3 bucket");
 	} catch (errors) {
 		console.log("Error deleting object notify event from S3 bucket: ", errors);
 		send_setup_errors(req, res, next, errors)
@@ -319,7 +325,7 @@ exports.uninstall_setup = function(req, res, next) {
 	// Delete Lambda invoke permission from lambda
 	try {
 		await deletePermissionToInvokeLambda(req, res, next);
-		await update_status(req, res, next, 10, "Deleted Permission to invoke Lambda");
+		await update_status(req, res, next, 5, "Deleted Permission to invoke Lambda");
 	} catch (errors) {
 		console.log("Error deleting Permission to invoke Lambda: ", errors);
 		send_setup_errors(req, res, next, errors)
@@ -328,7 +334,7 @@ exports.uninstall_setup = function(req, res, next) {
 	// Delete Assume Role policy from Lambda.
 	try {
 		await deleteLambdaAssumeRolePolicy(req, res, next);
-		await update_status(req, res, next, 10, "Deleted Lambda Assume Role Policy");
+		await update_status(req, res, next, 4, "Deleted Lambda Assume Role Policy");
 	} catch (errors) {
 		console.log("Error deleting Lambda Assume Role Policy: ", errors);
 		send_setup_errors(req, res, next, errors)
@@ -337,7 +343,7 @@ exports.uninstall_setup = function(req, res, next) {
 	// Delete S3 IAM policy
 	try {
 		await deleteIAMPolicy(req, res, next);
-		await update_status(req, res, next, 10, "Deleted IAM Policy.");
+		await update_status(req, res, next, 3, "Deleted IAM Policy.");
 	} catch (errors) {
 		console.log("Error deleting IAM Policy: ", errors);
 		send_setup_errors(req, res, next, errors)
@@ -346,13 +352,13 @@ exports.uninstall_setup = function(req, res, next) {
 	// Delete Assumed role
 	try {
 		await deleteIAMRole(req, res, next);
-		await update_status(req, res, next, 10, "Deleted Assumed Role for Lambda to access S3");
+		await update_status(req, res, next, 2, "Deleted Assumed Role for Lambda to access S3");
 	} catch (errors) {
 		console.log("Error deleting Assumed Role for Lambda to access S3: ", errors);
 		send_setup_errors(req, res, next, errors)
 	}
-	// Clean User Doc
 
+	// Clean User Doc
 	res.status(200).send({ msg: "Uninstall complete. (All permissions/notifications regarding ImageFix are deleted from your account." });
 }
 

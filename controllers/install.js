@@ -81,8 +81,23 @@ const createIAMPolicy_promise = function(req, res, next, params, iam) {
     });
 }
 
-const deleteIAMPolicy_promise = function(req, res, next, params, iam) {
+const deleteIAMPolicy_promise = function(req, res, next, iam, policyARN) {
+    var params = {
+        PolicyArn: policyARN
+    };
 
+    return new Promise((resolve, reject) => {
+        iam.deletePolicy(params, function(err, data) {
+            if (err) {
+                console.log("Error deleting IAM policy. Error: ", err); // an error occurred
+                reject(err)
+            }
+            else {
+                console.log("Success deleting IAM policy. ", data);           // successful response
+                resolve(data);
+            }
+        });     
+    });
 }
 
 const queryIAMPolicyExists = function(req, res, next) {
@@ -136,7 +151,18 @@ const createAttachIAMPolicy = function(req, res, next, userRef) {
 }
 
 exports deleteIAMPolicy = async function(req, res, next) {
+    let user_info = req.user_info;
 
+    let iam = new AWS.IAM({
+        accessKeyId: userRef.get('accessKeyId'),
+        secretAccessKey: userRef.get('accessKeySecret')
+    });
+    return db.collection('users').doc(user_info.id).get().then(userRef => {
+        let policy = userRef.get("s3BucketIAMPolicy");
+        return detachRolePolicy(req, res, next, policy, iam, roleName).then(detachedResult => {
+            return deleteIAMPolicy_promise(req, res, next, iam, policy);
+        });
+    });
 }
 
 /*
@@ -178,6 +204,25 @@ const attachRolePolicy = function(req, res, next, ARN, iam, role) {
     }); 
 }
 
+const detachRolePolicy = function(req, res, next, ARN, iam, role) {
+    let params = {
+        PolicyArn: ARN,
+        RoleName: role
+    };
+
+    return new Promise((resolve, reject) => {
+        iam.detachRolePolicy(params, function(err, data) {
+            if (err) {
+                console.log("Error detaching policy from Role. Error:" + err, err.stack); // an error occurred
+                reject(err)
+            }
+            else {
+                console.log("Detach policy success:" + data);           // successful response
+                resolve(data);
+            }
+        });     
+    }); 
+}
 
 const createIAMRole_promise = function(req, res, next, params, iam) {
     return new Promise((resolve, reject) => {
@@ -195,7 +240,18 @@ const createIAMRole_promise = function(req, res, next, params, iam) {
 }
 
 const deleteIAMRole_promise = function(req, res, next, params, iam) {
-
+    return new Promise((resolve, reject) => {
+        iam.deleteRole(params, function(err, data) {
+            if (err) {
+                console.log("Error deleting IAM Role. Error:", err, err.stack); // an error occurred
+                reject(err)
+            }
+            else {
+                console.log("Delete IAM role success:", data);           // successful response
+                resolve(data);
+            }
+        });     
+    });
 }
 
 // Says this new role can be assumed by Lambda Execution ARN
@@ -243,8 +299,16 @@ exports.createIAMRole = function(req, res, next) {
     })
 }
 
+// Deletes the Role created on customer account that Lambda execution role can assume to execute image optimizations
 exports.deleteIAMRole = function(req, res, next) {
-
+    let params = {
+        RoleName: roleName
+    };
+    let iam = new AWS.IAM({
+        accessKeyId: userRef.get('accessKeyId'),
+        secretAccessKey: userRef.get('accessKeySecret')
+    });
+    return deleteIAMRole_promise(req, res, next, params, iam);
 }
 
 exports.queryIAMRoleExists = function(req, res, next) {
@@ -343,8 +407,23 @@ const createAttachLambdaAssumeRolePolicy = function(req, res, next, userRef) {
     })
 }
 
-const deleteLambdaAssumeRolePolicy_promise = function(req, res, next, userRef) {
+const deleteLambdaAssumeRolePolicy_promise = function(req, res, next, iam, policyARN) {
+    var params = {
+        PolicyArn: policyARN
+    };
 
+    return new Promise((resolve, reject) => {
+        iam.deletePolicy(params, function(err, data) {
+            if (err) {
+                console.log("Error deleting Lambda assume role policy. Error: ", err); // an error occurred
+                reject(err)
+            }
+            else {
+                console.log("Success deleting Lambda assume role policy. ", data);           // successful response
+                resolve(data);
+            }
+        });     
+    });
 }
 
 exports.queryCreateAttachLambdaAssumeRolePolicy = async function(req, res, next) {
@@ -363,9 +442,26 @@ exports.queryCreateAttachLambdaAssumeRolePolicy = async function(req, res, next)
     });
 }
 
+// FIXME: You may have to first list policy versions, and then delete all versions, before deleting this one.
+// https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/IAM.html#listPolicyVersions-property
+// https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/IAM.html#deletePolicyVersion-property
 exports.deleteLambdaAssumeRolePolicy = async function(req, res, next) {
+    let user_info = req.user_info;
 
+    let iam = new AWS.IAM({
+        accessKeyId: config.awsLambdaAssumeRoleAccessKeyId,
+        secretAccessKey: config.awsLambdaAssumeRoleSecret
+    });
+
+    return db.collection('users').doc(user_info.id).get().then(userRef => {
+        let policy = userRef.get("LambdaAssumeRolePolicy");
+        // We need a detach role policy first from config.LambdaRole
+        return detachRolePolicy(req, res, next, policy, iam, config.lambdaRole).then(detachedResult => {
+            return deleteLambdaAssumeRolePolicy_promise(req, res, next, iam, policy);
+        })
+    });
 }
+
 
 const addPermissionToInvokeLambda_promise = function(req, res, next, lambda, bucket, account, statementId) {
     /* This example adds a permission for an S3 bucket to invoke a Lambda function. */
@@ -584,8 +680,6 @@ const deleteObjectNotifyEvent_promise = function(req, res, next, s3, bucketName)
         });
     });
 }
-
-
 
 // TODO: Check notify event does not exist.
 exports.queryCreateObjectNotifyEvent = async function(req, res, next) {
