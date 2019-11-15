@@ -545,7 +545,7 @@ exports.queryAddPermissionToInvokeLambda = async function(req, res, next) {
     });
 }
 
-exports deletePermissionToInvokeLambda = async function(req, res, next) {
+exports.deletePermissionToInvokeLambda = async function(req, res, next) {
     let lambda = new AWS.Lambda({
         accessKeyId: config.awsLambdaAssumeRoleAccessKeyId,
         secretAccessKey: config.awsLambdaAssumeRoleSecret,
