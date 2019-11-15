@@ -150,7 +150,7 @@ const createAttachIAMPolicy = function(req, res, next, userRef) {
     })
 }
 
-exports deleteIAMPolicy = async function(req, res, next) {
+exports.deleteIAMPolicy = async function(req, res, next) {
     let user_info = req.user_info;
 
     let iam = new AWS.IAM({
