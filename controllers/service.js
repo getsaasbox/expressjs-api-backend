@@ -13,6 +13,14 @@ const jwt_secret = config.jwt_secret;
 
 const { db } = require("./setup");
 
+const jwtTokenData = function(req, res, next) {
+	const token = req.header('Authorization').replace('Bearer', '').trim();
+	// TODO: Call this async, e.g. by passing a callback, then wrapping in promise.
+	const decoded = jwt.verify(token, jwt_secret);
+
+	return decoded;
+}
+
 
 exports.fetch_optimization_records = function(req, res, next) {
 	let user_info = jwtTokenData(req, res, next);
