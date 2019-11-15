@@ -310,9 +310,11 @@ exports.createIAMRole = function(req, res, next) {
 
 // Deletes the Role created on customer account that Lambda execution role can assume to execute image optimizations
 exports.deleteIAMRole = function(req, res, next) {
+    let user_info = req.user_info;
     let params = {
         RoleName: roleName
     };
+
     return db.collection('users').doc(user_info.id).get().then(userRef => {
         let iam = new AWS.IAM({
             accessKeyId: userRef.get('accessKeyId'),
