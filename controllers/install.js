@@ -578,7 +578,7 @@ exports.deletePermissionToInvokeLambda = async function(req, res, next) {
         };
         return deletePermissionToInvokeLambda_promise(req, res, next, lambda, params).then(success => {
             return db.collection('users').doc(user_info.id).set({
-                LambdaPermissionStatemendId: "",
+                LambdaPermissionStatementId: "",
                 LambdaPermissionStatement: ""
             }, {
                 merge: true
