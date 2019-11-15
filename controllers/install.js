@@ -161,7 +161,15 @@ exports.deleteIAMPolicy = async function(req, res, next) {
 
         let policy = userRef.get("s3BucketIAMPolicy");
         return detachRolePolicy(req, res, next, policy, iam, roleName).then(detachedResult => {
-            return deleteIAMPolicy_promise(req, res, next, iam, policy);
+            return deleteIAMPolicy_promise(req, res, next, iam, policy).then(success => {
+                return userRef.set({
+                    s3BucketIAMPolicy: "",
+                }, {
+                    merge: true
+                }).then(result => {
+                    return success;
+                });
+            })
         });
     });
 }
@@ -343,7 +351,7 @@ const queryLambdaAssumeRolePolicyExists = function(req, res, next) {
 
     return db.collection('users').doc(user_info.id).get().then(userRef => {
         let policy = userRef.get("LambdaAssumeRolePolicy")
-        if (policy) {
+        if (policy && policy != "") {
             console.log("Policy:", policy)
             return true
         } else {
@@ -458,7 +466,15 @@ exports.deleteLambdaAssumeRolePolicy = async function(req, res, next) {
         let policy = userRef.get("LambdaAssumeRolePolicy");
         // We need a detach role policy first from config.LambdaRole
         return detachRolePolicy(req, res, next, policy, iam, config.lambdaRole).then(detachedResult => {
-            return deleteLambdaAssumeRolePolicy_promise(req, res, next, iam, policy);
+            return deleteLambdaAssumeRolePolicy_promise(req, res, next, iam, policy).then(success => {
+                return userRef.set({
+                    LambdaAssumeRolePolicy: "",
+                }, {
+                    merge: true
+                }).then(result => {
+                    return success;
+                })
+            })
         })
     });
 }
@@ -506,7 +522,7 @@ const functionName = "ImageFix";
 
 const permissionToInvokeLambdaStatementExists = function(req, res, next, userRef, statement) {
     let statementId = userRef.get("LambdaPermissionStatementId");
-        // This statememt was previously added, for this account andb bucket.
+        // This statememt was previously added, for this account and bucket.
     if (statementId == statement)
         return true;
     else 
@@ -560,7 +576,16 @@ exports.deletePermissionToInvokeLambda = async function(req, res, next) {
             FunctionName: functionName,
             StatementId: statementId
         };
-        return deletePermissionToInvokeLambda_promise(req, res, next, lambda, params);
+        return deletePermissionToInvokeLambda_promise(req, res, next, lambda, params).then(success => {
+            return userRef.set({
+                LambdaPermissionStatemendId: "",
+                LambdaPermissionStatement: ""
+            }, {
+                merge: true
+            }).then(result => {
+                return success;
+            })
+        })
     });
 }
 
