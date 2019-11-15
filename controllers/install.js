@@ -158,7 +158,7 @@ exports.deleteIAMPolicy = async function(req, res, next) {
             accessKeyId: userRef.get('accessKeyId'),
             secretAccessKey: userRef.get('accessKeySecret')
         });
-        
+
         let policy = userRef.get("s3BucketIAMPolicy");
         return detachRolePolicy(req, res, next, policy, iam, roleName).then(detachedResult => {
             return deleteIAMPolicy_promise(req, res, next, iam, policy);
@@ -652,11 +652,9 @@ const getBucketNotificationConfig_promise = function(req, res, next, s3, bucketN
 const deleteObjectNotifyEvent_promise = function(req, res, next, s3, bucketName) {
     return getBucketNotificationConfig_promise(req, res, next, s3, bucketName).then(bucketNotifyConfig => {
         // Find the ids to be deleted: 
-        let LFConfigs = bucketNotifyConfig.LambdaFunctionConfigurations.map(lfconfig => {
+        let LFConfigs = bucketNotifyConfig.LambdaFunctionConfigurations.filter(lfconfig => {
             if (!lfconfig.Id.startsWith(functionName)) {
                 return lfconfig;
-            } else {
-                return null;
             }
         });
 
