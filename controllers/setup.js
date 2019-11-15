@@ -352,13 +352,15 @@ exports.uninstall_setup = async function(req, res, next) {
 	// Delete Assumed role
 	try {
 		await deleteIAMRole(req, res, next);
-		await update_status(req, res, next, 2, "Deleted Assumed Role for Lambda to access S3");
+		await update_status(req, res, next, 3, "Deleted Assumed Role for Lambda to access S3");
+		await update_status(req, res, next, 2, "Uninstall complete. (All permissions/notifications regarding ImageFix are deleted from your account.");
 	} catch (errors) {
 		console.log("Error deleting Assumed Role for Lambda to access S3: ", errors);
 		send_setup_errors(req, res, next, errors)
 	}
 
 	// Clean User Doc
+
 	res.status(200).send({ msg: "Uninstall complete. (All permissions/notifications regarding ImageFix are deleted from your account." });
 }
 
