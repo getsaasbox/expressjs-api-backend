@@ -35,7 +35,7 @@ exports.fetch_optimization_records = function(req, res, next) {
 		histories.forEach(snap => {
 			opRecords.push(snap.data());
 		})
-		console.log("Last few operational records:", opRecords);
+		//console.log("Last few operational records:", opRecords);
 		res.status(200).send({opRecords});
 	}).catch(err => {
 		console.log("Error fetching image optimization op records. Error: \n", err);
