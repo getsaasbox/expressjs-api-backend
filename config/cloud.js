@@ -3,6 +3,7 @@
 
 exports.development = {
 	"jwt_secret" : "67c93071e063adead11bec4fde30110139c9",
+	"quicksight_jwt_secret": "",
 	"lambdaARN" : "arn:aws:lambda:us-west-1:317925744813:function:ImageFix",
 	"lambdaRoleARN" : "arn:aws:iam::317925744813:role/service-role/ImageFix-role-yh8a5jhs",
 	"lambdaRole": "ImageFix-role-yh8a5jhs",
@@ -13,6 +14,7 @@ exports.development = {
 
 exports.production = {
 	"jwt_secret" : "67c93071e063adead11bec4fde30110139c9",
+	"quicksight_jwt_secret": "",
 	"lambdaARN" : "arn:aws:lambda:us-west-1:317925744813:function:ImageFix",
 	"lambdaRoleARN" : "arn:aws:iam::317925744813:role/service-role/ImageFix-role-yh8a5jhs",
 	"lambdaRole": "ImageFix-role-yh8a5jhs",
