@@ -6,7 +6,7 @@
     "start": "if [[ $NODE_ENV == 'production' ]]; then node ./bin/www; else nodemon ./bin/www; fi"
   },
   "dependencies": {
-    "aws-sdk": "^2.567.0",
+    "aws-sdk": "^2.976.0",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
     "dotenv": "^8.2.0",
