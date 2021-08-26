@@ -10,7 +10,10 @@ const AWS = require('aws-sdk')
 
 AWS.config.update({region: 'us-east-1'});
 
-let quicksight = new AWS.QuickSight();
+let quicksight = new AWS.QuickSight({
+  accessKeyId: process.env.quicksightUserAccessKeyId, 
+  secretAccessKey: process.env.quicksightUserSecret
+});
 
 const jwt = require('jsonwebtoken');
 
