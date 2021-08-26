@@ -32,7 +32,7 @@ var params = {
     }
   },
   Namespace: 'default', /* required */
-  SessionLifetimeInMinutes: '4',
+  SessionLifetimeInMinutes: '15',
 };
 
 const quicksightEmbedGenPromise = function(req, res, next) {
