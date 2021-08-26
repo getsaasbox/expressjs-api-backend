@@ -7,6 +7,7 @@ const config = require('../config/cloud.js')[env];
 
 
 const AWS = require('aws-sdk')
+let quicksight = new AWS.QuickSight();
 
 const jwt = require('jsonwebtoken');
 
