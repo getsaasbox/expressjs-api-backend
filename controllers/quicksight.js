@@ -62,7 +62,7 @@ exports.get_anon_embed_url = function(req, res, next) {
       } else {
         return res.send({ error: "Could not create embed url"})
       }
-  }).catch(err => { res.send({ error: err })});
+  }).catch(err => { console.log("Error:", err); res.send({ error: err })});
 }
 
 
