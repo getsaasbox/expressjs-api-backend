@@ -22,7 +22,7 @@ const jwt_secret = config.quicksight_jwt_secret;
 
 var params = {
   AuthorizedResourceArns: [ /* required */
-    "arn:aws:quicksight:us-east-1:452769287049:dashboard/0795a3498-45fd-44e6-9748-e2fdf085415c",
+    "arn:aws:quicksight:us-east-1:452769287049:dashboard/795a3498-45fd-44e6-9748-e2fdf085415c",
     /* more items */
   ],
   AwsAccountId: '452769287049', /* required */
