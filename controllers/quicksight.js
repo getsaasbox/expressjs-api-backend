@@ -65,7 +65,7 @@ exports.get_anon_embed_url = function(req, res, next) {
   return quicksightEmbedGenPromise(req, res, next).then(embed_url => {
       console.log("Embed URL:", embed_url);
       if (embed_url) {
-        return res.send({ embed_url: embed_url })
+        return res.send({ embed_url })
       } else {
         return res.send({ error: "Could not create embed url"})
       }
