@@ -63,9 +63,10 @@ exports.get_anon_embed_url = function(req, res, next) {
 	//let user_info = jwtTokenData(req, res, next);
 
   return quicksightEmbedGenPromise(req, res, next).then(embed_url => {
-      console.log("Embed URL:", embed_url);
+      //console.log("Embed URL:", embed_url);
+      // This is already a JSON object with EmbedUrl key in it:
       if (embed_url) {
-        return res.send({ embed_url })
+        return res.send(embed_url)
       } else {
         return res.send({ error: "Could not create embed url"})
       }
