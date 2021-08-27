@@ -22,13 +22,13 @@ const jwt_secret = config.quicksight_jwt_secret;
 
 var params = {
   AuthorizedResourceArns: [ /* required */
-    "arn:aws:quicksight:us-east-1:452769287049:dashboard/04b65c30-abca-472a-bb02-1cd877ca3073",
+    "arn:aws:quicksight:us-east-1:452769287049:dashboard/f15bfdaa-b8c3-47b1-9169-c3b88d1e79af",
     /* more items */
   ],
   AwsAccountId: '452769287049', /* required */
   ExperienceConfiguration: { /* required */
     Dashboard: {
-      InitialDashboardId: '04b65c30-abca-472a-bb02-1cd877ca3073' /* required */
+      InitialDashboardId: 'f15bfdaa-b8c3-47b1-9169-c3b88d1e79af' /* required */
     }
   },
   Namespace: 'default', /* required */
