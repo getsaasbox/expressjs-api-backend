@@ -60,7 +60,9 @@ const jwtTokenData = function(req, res, next) {
 
 
 exports.get_anon_embed_url = function(req, res, next) {
-	//let user_info = jwtTokenData(req, res, next);
+	let user_info = jwtTokenData(req, res, next);
+  
+  console.log("User Info:", user_info);
 
   return quicksightEmbedGenPromise(req, res, next).then(embed_url => {
       //console.log("Embed URL:", embed_url);
