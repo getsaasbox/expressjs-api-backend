@@ -17,7 +17,7 @@ let quicksight = new AWS.QuickSight({
 
 const jwt = require('jsonwebtoken');
 
-const jwt_secret = config.quicksight_jwt_secret;
+const jwt_secret = process.env.saasdata_jwt_secret;
 
 
 var params = {
