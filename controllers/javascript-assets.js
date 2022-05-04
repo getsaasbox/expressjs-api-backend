@@ -63,7 +63,7 @@ const createNewUserDocReturnExisting = async function(req, res, next, user_info)
         }).then(userRef => {
           // FIXME: Return latest deploy link here as well if it exists.
 
-          return userRef;
+         return db.collection('js-asset-users').doc(user_info.id).get();
 
         }).catch(err => {
           return { error: "Failed to create user in Firestore.\n" + err }
@@ -84,9 +84,10 @@ exports.create_get_user_info = function(req, res, next) {
   let user_info = jwtTokenData(req, res, next);
   let user_data = {};
   return createNewUserDocReturnExisting(req, res, next, user_info).then(user => {
-      user_data.domain = user.domain;
-      user_data.api_key = user.api_key;
-      user_data.is_admin = user.is_admin;
+      console.log("User data:", user.data())
+      user_data.domain = user.data().domain;
+      user_data.api_key = user.data().api_key;
+      user_data.is_admin = user.data().is_admin;
     res.send({ user_data });
   })
 }
