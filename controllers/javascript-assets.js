@@ -31,7 +31,7 @@ const generateToken = function() {
     
 
 // FIXME: add JWT secret.
-// const jwt_secret = process.env.jassets_app_jwt_secret;
+const jwt_secret = process.env.jassets_app_jwt_secret;
 
 const jwt_secret = "4cc990a67e01a5c1a1ba11ada60434cb8dfb";
 
