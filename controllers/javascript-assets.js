@@ -48,7 +48,7 @@ const jwtTokenData = function(req, res, next) {
 // Creates new user if it doesnt exist, returns user data.
 const createNewUserDocReturnExisting = async function(req, res, next, user_info) {
   let is_admin = false;
-
+  let user_data = {};
   return db.collection('js-asset-users').doc(user_info.id).get().then(user => {
     if (!user.exists) {
       return generateToken().then(token => {
@@ -62,7 +62,9 @@ const createNewUserDocReturnExisting = async function(req, res, next, user_info)
           is_admin: is_admin,
         }).then(userRef => {
           // FIXME: Return latest deploy link here as well if it exists.
+
           return userRef;
+
         }).catch(err => {
           return { error: "Failed to create user in Firestore.\n" + err }
         });
@@ -80,8 +82,12 @@ const createNewUserDocReturnExisting = async function(req, res, next, user_info)
 //
 exports.create_get_user_info = function(req, res, next) {
   let user_info = jwtTokenData(req, res, next);
-  return createNewUserDocReturnExisting(req, res, next, user_info).then(created => {
-    res.send({ created });
+  let user_data = {};
+  return createNewUserDocReturnExisting(req, res, next, user_info).then(user => {
+      user_data.domain = user.domain;
+      user_data.api_key = user.api_key;
+      user_data.is_admin = user.is_admin;
+    res.send({ user_data });
   })
 }
 
