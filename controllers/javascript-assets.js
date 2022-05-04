@@ -36,7 +36,7 @@ const jwt_secret = process.env.jassets_app_jwt_secret;
 
 const jwtTokenData = function(req, res, next) {
 	const token = req.header('Authorization').replace('Bearer', '').trim();
-  console.log("Token:", token);
+  // console.log("Token:", token);
 
 	// TODO: Call this async, e.g. by passing a callback, then wrapping in promise.
 	const decoded = jwt.verify(token, jwt_secret);
