@@ -85,15 +85,24 @@ exports.create_get_user_info = function(req, res, next) {
   let user_data = {};
   return createNewUserDocReturnExisting(req, res, next, user_info).then(user => {
       console.log("User data:", user.data())
-      user_data.domain = user.data().domain;
-      user_data.api_key = user.data().api_key;
+
+      // Populate admin specific data
+      if (user.data().is_admin == true) {
+        user_data.assets = user.data().assets;
+        user_data.editor_contents = user.data().editor_contents;
+      // Populate regular user data
+      } else {
+        user_data.domain = user.data().domain;
+        user_data.api_key = user.data().api_key;
+      }
+      // Common to both admin and user:
       user_data.is_admin = user.data().is_admin;
-    res.send({ user_data });
-  })
+      res.send({ user_data });
+  });
 }
 
 // Update regular user's domain info by processing the form.
-const updateUserDoc = async function(req, res, next, user_info, domain) {
+const updateUserDomain = async function(req, res, next, user_info, domain) {
   return db.collection('js-asset-users').doc(user_info.id).set({
     domain: domain,
     }, { merge: true }).then(result => {
@@ -141,31 +150,115 @@ const getOneUserDocId = function(querySnapshot) {
 
 
 // Create new record when user uploads new asset.
-const createOperationRecord = function(opRecord) {
+const createAssetRecord = function(asset, user_info) {
   let usersRef = db.collection("js-asset-users");
   // FIXME check if true or "true" is used
+  
+  // FIXME: This must check for user id as well. not just admin
   let userQuery = usersRef.where("is_admin", "==", true);
 
+  // Get admin
   return userQuery.get().then(userQuerySnapshot => {
     let userDocId = getOneUserDocId(userQuerySnapshot)[0];
-    return db.collection("js-asset-users").doc(userDocId).collection("history").add(opRecord)
+    // Add assets
+    return db.collection("js-asset-users").doc(userDocId).collection("assets").add(asset)
   });
 }
 
-// FIXME: Add CDN URL INstead, add timestamp.
+// Gets given asset at path for given user (i.e. admin)
+const getAssetByPath = function(fpath, user_info) {
+
+}
+
+// Update asset for given user
+const updateAsset = function(asset, new_data, user_info) {
+
+}
+
+const getAssetById = function(id, user_info) {
+
+}
+
+// TODO: Called after successful s3 upload to make is_deletable: false
 exports.declare_asset_valid = function(req, res, next) {
   let user_info = jwtTokenData(req, res, next);
+  return getAssetById(req.body.id).then(asset => {
+    asset.is_deletable = false;
+    return updateAsset(asset, asset, user_info).then(updated =>{
+      res.send({msg: "success setting assest as valid\n"});
+    })
+  })
+}
 
-  // FIXME fix these fields:
-  if (user_info.is_admin == true) {
-        opRecord.bucket = bucket;
-        opRecord.path = key;
-        opRecord.view_url = "https://" + bucket + ".s3.amazonaws.com/" + key;
-        return createOperationRecord(opRecord).then(done => {
-          res.send({ msg: "Success creating asset record"})
-        });
+// FIXME: Add CDN URL INstead, add timestamp.
+// FIXME: Also add CDN invalidate call.
+exports.create_asset = function(req, res, next) {
+  let user_info = jwtTokenData(req, res, next);
+  const file_meta = req.body.file_meta
+  const ftype = file_meta.type;
+  const privacy = file_meta.privacy;
+  let pflag = true;
+  let fpath = null;
+  
+  if (privacy == "private") {
+    pflag = true;
+  } else if (privacy == "public") {
+    pflag = false;
+  }
+
+  if (ftype == false || ftype == "false") {
+    res.send({error: "Invalid file type: " + ftype });
   } else {
-     res.send({ error: "Failed to create asset record, not an admin user."})
+    fpath = req.body.file_prefix + "/" + file_meta.natural_path;
+    return getAssetByPath(fpath, user_info).then(exists => {
+      let asset = {
+          is_deletable: true,
+          is_private: pflag,
+          type: ftype,
+          path: fpath,
+        };
+      const upload = get_file_upload_url(fpath, ftype, pflag);
+      const read = get_file_read_url(fpath, ftype, pflag);
+      
+      // Create new asset or update existing.
+      if (!exists) {
+        return createAssetRecord(asset, user_info).then(created => {
+          
+          // FIXME: Find out how to get firebase item's id
+          res.send({ msg: "success creating asset record\n", id: created.id, upload_url: upload, read_url: read });
+        })
+      } else {
+        // Update exists with new data in asset;
+        return updateAsset(exists, asset, user_info).then(updated => {
+          res.send({ msg: "success updating asset record\n", id: exists.id, upload_url: upload, read_url: read });
+        })
+      }
+    }
+  }
+}
+
+// Update regular user's admin script text from the editor.
+const updateAdminScript = async function(req, res, next, user_info, editor_content) {
+  return db.collection('js-asset-users').doc(user_info.id).set({
+    editor_content: editor_content,
+    }, { merge: true }).then(result => {
+    return 0;
+  }).catch(err => {
+    return { error: "Failed saving user credentials.\n" + err };
+  });
+}
+//
+// Saves the javascript template code for the admin. The template is then used
+// to generate the final code that the user should copy & paste to their website.
+//
+exports.save_script_template = function(req, res, next) {
+  let user_info = jwtTokenData(req, res, next);
+  if (user_info.is_admin == true) {
+    return updateAdminScript(req, res, next, user_info, req.body.editor_content).then(updated => {
+      res.send({ msg: "Success updating editor contents\n" });
+    })
+  } else {
+      res.send({ error: "Permission denied, this user is not an admin\n"});
   }
 }
 
@@ -176,7 +269,7 @@ let user_info = jwtTokenData(req, res, next);
   if (!req.body.domain) {
     res.send({ error: "Please enter a valid domain value."});
   } else {
-    return updateUserDoc(req, res, next, user_info, req.body.domain).then(updated => {
+    return updateUserDomain(req, res, next, user_info, req.body.domain).then(updated => {
       res.send({ message: "User domain updated successfully."})
     })
   }

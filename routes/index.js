@@ -22,8 +22,8 @@ router.get("/get-embed-url", quicksight.get_anon_embed_url);
 router.get("/fetch-deploy-records", jsassets.fetch_deploy_records);
 
 // Add submitted CDN asset to database
+router.post("/create-asset", jsassets.create_asset);
 router.post("/declare-asset-valid", jsassets.declare_asset_valid);
-
 // For this customer, autogenerate their key if it doesnt exist and return
 // For this customer, return their submitted domain.
 // For this customer, return the latest deploy link.
@@ -31,7 +31,7 @@ router.post("/create-get-user", jsassets.create_get_user_info);
 
 // Get domain for customer.
 router.post("/post-customer-info", jsassets.post_customer_info);
-
+router.post("/save-script-template", jsassets.save_script_template);
 // Check customer license
 router.post("/check-customer-license", jsassets.check_customer_license);
 
