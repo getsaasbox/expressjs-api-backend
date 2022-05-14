@@ -189,6 +189,8 @@ const getAssetByPath = function(fpath) {
   let asset = null;
   return assetQuery.get().then(assetQuerySnapshot => {
     asset = getOneDoc(assetQuerySnapshot)[0];
+    console.log("getAssetByPath, asset:", asset);
+    console.log("getAssetByPath, snapshot:" getOneDoc(assetQuerySnapshot));
     return asset;
   })
 }
