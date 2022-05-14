@@ -29,9 +29,11 @@ router.post("/declare-asset-valid", jsassets.declare_asset_valid);
 // For this customer, return the latest deploy link.
 router.post("/create-get-user", jsassets.create_get_user_info);
 
+router.post("/save-script-template", jsassets.save_script_template);
+
+
 // Get domain for customer.
 router.post("/post-customer-info", jsassets.post_customer_info);
-router.post("/save-script-template", jsassets.save_script_template);
 // Check customer license
 router.post("/check-customer-license", jsassets.check_customer_license);
 

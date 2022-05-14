@@ -10,10 +10,11 @@ const AWS = require('aws-sdk')
 
 const { db } = require("./setup");
 
-
+const {get_file_upload_url, get_file_read_url} = require('../helpers/fileurl');
 
 const jwt = require('jsonwebtoken');
 
+const { setdoc, doc} = require("firebase/firestore");
 
 const crypto = require("crypto");
 
@@ -112,7 +113,7 @@ const updateUserDomain = async function(req, res, next, user_info, domain) {
   });
 }
 
-// Fetch records that admin has created
+// FIXME: Is this unused? Fetch records that admin has created
 exports.fetch_deploy_records = function(req, res, next) {
   let user_info = jwtTokenData(req, res, next);
 
@@ -136,6 +137,16 @@ exports.fetch_deploy_records = function(req, res, next) {
   }
 }
 
+const getOneDoc= function(querySnapshot) {
+  return querySnapshot.docs.map(docSnapshot => {
+    return docSnapshot.data();
+  });
+}
+const getOneDocId = function(querySnapshot) {
+  return querySnapshot.docs.map(docSnapshot => {
+    return docSnapshot.id;
+  });
+}
 
 const getOneUserDoc = function(querySnapshot) {
   return querySnapshot.docs.map(docSnapshot => {
@@ -150,7 +161,10 @@ const getOneUserDocId = function(querySnapshot) {
 
 
 // Create new record when user uploads new asset.
-const createAssetRecord = function(asset, user_info) {
+const createAssetRecord = function(asset) {
+  return db.collection('assets').add(asset);
+
+  /*
   let usersRef = db.collection("js-asset-users");
   // FIXME check if true or "true" is used
   
@@ -163,19 +177,33 @@ const createAssetRecord = function(asset, user_info) {
     // Add assets
     return db.collection("js-asset-users").doc(userDocId).collection("assets").add(asset)
   });
+  */
 }
 
 // Gets given asset at path for given user (i.e. admin)
-const getAssetByPath = function(fpath, user_info) {
-
+// Hopefully this returns id as well as it is used later.
+const getAssetByPath = function(fpath) {
+  let assetsRef = db.collection("assets");
+  let assetQuery = assetsRef.where("path", "==", fpath);
+  return assetQuery.get().then(assetQuerySnapshot => {
+    return getOneDoc(assetQuerySnapshot).then(asset => {
+      return asset;
+    })
+  })
 }
 
-// Update asset for given user
-const updateAsset = function(asset, new_data, user_info) {
-
+// Update asset for given id
+const updateAsset = function(asset, id) {
+  return db.collection('assets').doc(id).set(asset, { merge: true }).then(result => {
+    return 0;
+  }).catch(err => {
+    return { error: "Failed saving asset. " + err };
+  });
 }
 
-const getAssetById = function(id, user_info) {
+const getAssetById = function(id) {
+  let assetsRef = db.collection("assets");
+  return db.collection('assets').doc(id).get();
 
 }
 
@@ -183,8 +211,9 @@ const getAssetById = function(id, user_info) {
 exports.declare_asset_valid = function(req, res, next) {
   let user_info = jwtTokenData(req, res, next);
   return getAssetById(req.body.id).then(asset => {
+    console.log("Asset:", asset);
     asset.is_deletable = false;
-    return updateAsset(asset, asset, user_info).then(updated =>{
+    return updateAsset(asset, id).then(updated => {
       res.send({msg: "success setting assest as valid\n"});
     })
   })
@@ -206,11 +235,16 @@ exports.create_asset = function(req, res, next) {
     pflag = false;
   }
 
-  if (ftype == false || ftype == "false") {
-    res.send({error: "Invalid file type: " + ftype });
+  if (user_info.is_admin != true || ftype == false || ftype == "false") {
+    if (user_info.is_admin != true) {
+      res.send({error: "Insufficient privileges (not an admin) to create an asset\n"});
+    } else {
+      res.send({error: "Invalid file type: " + ftype });
+    }
   } else {
     fpath = req.body.file_prefix + "/" + file_meta.natural_path;
-    return getAssetByPath(fpath, user_info).then(exists => {
+    // See if there is existing asset at this path:
+    return getAssetByPath(fpath).then(exists => {
       let asset = {
           is_deletable: true,
           is_private: pflag,
@@ -222,14 +256,15 @@ exports.create_asset = function(req, res, next) {
       
       // Create new asset or update existing.
       if (!exists) {
-        return createAssetRecord(asset, user_info).then(created => {
+        // Create new asset
+        return createAssetRecord(asset).then(created => {
           
           // FIXME: Find out how to get firebase item's id
           res.send({ msg: "success creating asset record\n", id: created.id, upload_url: upload, read_url: read });
         })
       } else {
         // Update exists with new data in asset;
-        return updateAsset(exists, asset, user_info).then(updated => {
+        return updateAsset(asset, exists.id).then(updated => {
           res.send({ msg: "success updating asset record\n", id: exists.id, upload_url: upload, read_url: read });
         })
       }
@@ -247,6 +282,7 @@ const updateAdminScript = async function(req, res, next, user_info, editor_conte
     return { error: "Failed saving user credentials.\n" + err };
   });
 }
+
 //
 // Saves the javascript template code for the admin. The template is then used
 // to generate the final code that the user should copy & paste to their website.
