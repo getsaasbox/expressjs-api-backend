@@ -2,7 +2,6 @@ var s3 = require('../helpers/s3');
 
 
 var env  = process.env.NODE_ENV || 'development';
-const models = require('../models')
 
 
 
