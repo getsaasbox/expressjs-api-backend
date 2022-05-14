@@ -138,7 +138,7 @@ exports.fetch_deploy_records = function(req, res, next) {
   }
 }
 
-const getOneDoc= function(querySnapshot) {
+const getOneDoc = function(querySnapshot) {
   return querySnapshot.docs.map(docSnapshot => {
     return docSnapshot.data();
   });
@@ -186,10 +186,10 @@ const createAssetRecord = function(asset) {
 const getAssetByPath = function(fpath) {
   let assetsRef = db.collection("assets");
   let assetQuery = assetsRef.where("path", "==", fpath);
+  let asset = null;
   return assetQuery.get().then(assetQuerySnapshot => {
-    return getOneDoc(assetQuerySnapshot).then(asset => {
-      return asset;
-    })
+    asset = getOneDoc(assetQuerySnapshot)[0];
+    return asset;
   })
 }
 
@@ -211,12 +211,12 @@ const getAssetById = function(id) {
 // TODO: Called after successful s3 upload to make is_deletable: false
 exports.declare_asset_valid = function(req, res, next) {
   let user_info = jwtTokenData(req, res, next);
-  return getAssetById(req.body.id).then(asset => {
-    console.log("Asset:", asset);
-    asset.is_deletable = false;
-    return updateAsset(asset, id).then(updated => {
-      res.send({msg: "success setting assest as valid\n"});
-    })
+  let asset = null;
+  asset = getAssetById(req.body.id);
+  console.log("Asset:", asset);
+  asset.is_deletable = false;
+  return updateAsset(asset, id).then(updated => {
+    res.send({msg: "success setting assest as valid\n"});
   })
 }
 
