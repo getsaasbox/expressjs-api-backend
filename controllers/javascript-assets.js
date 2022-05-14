@@ -245,6 +245,9 @@ exports.create_asset = function(req, res, next) {
   } else {
     fpath = req.body.file_prefix + "/" + file_meta.natural_path;
     // See if there is existing asset at this path:
+    console.log("Fpath:", fpath);
+    console.log("Ftype:", ftype);
+    console.log("Flag:", pflag);
     return getAssetByPath(fpath).then(exists => {
       let asset = {
           is_deletable: true,
