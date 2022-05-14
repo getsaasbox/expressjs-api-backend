@@ -268,7 +268,7 @@ exports.create_asset = function(req, res, next) {
           res.send({ msg: "success updating asset record\n", id: exists.id, upload_url: upload, read_url: read });
         })
       }
-    }
+    })
   }
 }
 
