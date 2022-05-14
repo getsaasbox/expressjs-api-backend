@@ -190,7 +190,7 @@ const getAssetByPath = function(fpath) {
   return assetQuery.get().then(assetQuerySnapshot => {
     asset = getOneDoc(assetQuerySnapshot)[0];
     console.log("getAssetByPath, asset:", asset);
-    console.log("getAssetByPath, snapshot:" getOneDoc(assetQuerySnapshot));
+    console.log("getAssetByPath, snapshot:", getOneDoc(assetQuerySnapshot));
     return asset;
   })
 }
