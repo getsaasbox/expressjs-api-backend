@@ -14,7 +14,8 @@ const {get_file_upload_url, get_file_read_url} = require('../helpers/fileurl');
 
 const jwt = require('jsonwebtoken');
 
-const { setdoc, doc} = require("firebase/firestore");
+const { doc, setDoc, collection, getDocs } = require("firebase/firestore");
+
 
 const crypto = require("crypto");
 
