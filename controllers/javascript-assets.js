@@ -100,17 +100,17 @@ exports.create_get_user_info = function(req, res, next) {
       }
       // Common to both admin and user:
       user_data.is_admin = user.data().is_admin;
+      
+      // Also fetch assets separately for admin user
       if (user.data().is_admin == true) {
-        const assetsQuerySnapshot = getDocs(collection(db, "assets"));
+        const assetsQuerySnapshot = db.collection("assets").get();
 
         assets = assetsQuerySnapshot.docs.map(snapshot => {
-          let = snapshot.data();
+          return snapshot.data();
         })
-
-        return db.collection('assets')
       }
       
-      res.send({ user_data });
+      res.send({ user_data, assets });
   });
 }
 
