@@ -17,7 +17,7 @@ let s3bucket = {
 	"public_url": "saasbox-files-public",
 	/* To serve public files */
 	"cdn_public_url": "https://d1vtdwko5kmvv8.cloudfront.net",
-	"distributionId": "d1vtdwko5kmvv8" // CDN distribution id for cache invalidation.
+	"distributionId": "E1UKJS3Y7FRX0N" // CDN distribution id for "d1vtdwko5kmvv8" used for cache invalidation.
 };
 
 
