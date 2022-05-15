@@ -106,7 +106,7 @@ exports.create_get_user_info = function(req, res, next) {
       if (user.data().is_admin == true) {
         assetsRef = db.collection("assets");
         return assetsRef.get().then(assetsQuerySnapshot => {
-          assets = assetsQuerySnapshot.map(doc => {
+          assets = assetsQuerySnapshot.docs.map(doc => {
             return doc.data();
           });
           res.send({ user_data, assets });
