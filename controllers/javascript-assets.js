@@ -180,15 +180,26 @@ exports.request_cdn_invalidate = function(req, res, next) {
     res.status(403).send({error: "Insufficient privileges (not an admin) to request invalidation\n"});
    } else {
     // Pass path in an array:
-    return invalidate_cdn_path([req.body.path]).then(req_data => {
-      res.send({msg: "Successful invalidation request, not saved to track yet:", req_status})
+    return invalidate_cdn_path([req.body.path]).then(req_status => {
+      // req_status object:
+      /*let req_data = {
+        invalidationId: data.Invalidation.Id,
+        callId: callId,
+        distId: s3bucket.distributionId,
+        paths: paths,
+        status: data.Invalidation.Status
+      };*/
+      res.send({
+        msg: "Successful invalidation request, not saved to track yet:",
+        req_status: req_status
+      });
       // Get status of invalidation and save it to the database if not finished:
       /*return get_cdn_invalidate_status(req_data).then(req_status => {
         // Check status, if not compledte, save to db.collection("invalidations").add()
         // Query it on next page reload, 
         // keep in DB if status unchanged, switch to done if it is done. Delete it if it is found done.
       })*/
-    })
+    });
    }
 }
 

@@ -77,10 +77,11 @@ exports.invalidate_cdn_path = function(paths) {
 
 		  	// Return invalidation data:
 		  	let req_data = {
-		  		invalidationId: data.id,
+		  		invalidationId: data.Invalidation.Id,
 		  		callId: callId,
 		  		distId: s3bucket.distributionId,
-		  		paths: paths
+		  		paths: paths,
+		  		status: data.Invalidation.Status
 		  	};
 		    
 				console.log("Req details:", req_data);
