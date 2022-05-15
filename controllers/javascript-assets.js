@@ -88,6 +88,7 @@ exports.create_get_user_info = function(req, res, next) {
   return createNewUserDocReturnExisting(req, res, next, user_info).then(user => {
       console.log("User data:", user.data())
       let assets;
+      let assetsRef;
 
       // Populate admin specific data
       if (user.data().is_admin == true) {
@@ -103,9 +104,10 @@ exports.create_get_user_info = function(req, res, next) {
       
       // Also fetch assets separately for admin user
       if (user.data().is_admin == true) {
-        return db.collection("assets").get().then(assetsQuerySnapshot => {
-          assets = assetsQuerySnapshot.docs.map(snapshot => {
-            return snapshot.data();
+        assetsRef = db.collection("assets");
+        return assetsRef.get().then(assetsQuerySnapshot => {
+          assets = assetsQuerySnapshot.map(doc => {
+            return doc.data();
           });
           res.send({ user_data, assets });
         })
