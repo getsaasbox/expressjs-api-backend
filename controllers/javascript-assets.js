@@ -189,7 +189,9 @@ const getAssetByPath = function(fpath) {
   let asset = null;
   return assetQuery.get().then(assetQuerySnapshot => {
     asset = getOneDoc(assetQuerySnapshot)[0];
-    asset.id = getOneDocId(assetQuerySnapshot)[0];
+    // If doc exists, get its id:
+    if (getOneDocId(assetQuerySnapshot).length > 0)
+      asset.id = getOneDocId(assetQuerySnapshot)[0];
     return asset;
   })
 }
