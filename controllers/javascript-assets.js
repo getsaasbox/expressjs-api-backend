@@ -10,7 +10,9 @@ const AWS = require('aws-sdk')
 
 const { db } = require("./setup");
 
-const {get_file_upload_url, get_file_read_url, invalidate_cdn_path } = require('../helpers/fileurl');
+const {get_file_upload_url, get_file_read_url } = require('../helpers/fileurl');
+
+const { invalidate_cdn_path } = require('../helpers/s3');
 
 const jwt = require('jsonwebtoken');
 
