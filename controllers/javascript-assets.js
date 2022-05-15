@@ -174,7 +174,7 @@ const getOneUserDocId = function(querySnapshot) {
   });
 }
 
-exports.request_cdn_invalidate(req, res, next) {
+exports.request_cdn_invalidate = function(req, res, next) {
    let user_info = jwtTokenData(req, res, next);
    if (user_info.is_admin != true) {
     res.status(403).send({error: "Insufficient privileges (not an admin) to request invalidation\n"});
