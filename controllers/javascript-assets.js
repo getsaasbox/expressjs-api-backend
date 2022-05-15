@@ -55,7 +55,7 @@ const createNewUserDocReturnExisting = async function(req, res, next, user_info)
     if (!user.exists) {
       return generateToken().then(token => {
         // Create the user as admin if that is true.
-        if (user.data().is_admin == true) {
+        if (user_info.is_admin == true) {
           is_admin = true;
         }
         return db.collection('js-asset-users').doc(user_info.id).set({
