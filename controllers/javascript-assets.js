@@ -238,7 +238,7 @@ const updateAsset = function(asset, id) {
 
 const getAssetById = function(id) {
   let assetsRef = db.collection("assets");
-  return db.collection('assets').doc(id).get().then(assetQuerySnapshot => {
+  return assetsRef.doc(id).get().then(assetQuerySnapshot => {
     asset = getOneDoc(assetQuerySnapshot)[0];
     console.log("Asset we got by id:", asset);
     // If doc exists, get its id:
