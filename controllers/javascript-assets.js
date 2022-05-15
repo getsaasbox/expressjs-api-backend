@@ -103,14 +103,15 @@ exports.create_get_user_info = function(req, res, next) {
       
       // Also fetch assets separately for admin user
       if (user.data().is_admin == true) {
-        const assetsQuerySnapshot = db.collection("assets").get();
-
-        assets = assetsQuerySnapshot.docs.map(snapshot => {
-          return snapshot.data();
+        return db.collection("assets").get().then(assetsQuerySnapshot => {
+          assets = assetsQuerySnapshot.docs.map(snapshot => {
+            return snapshot.data();
+          });
+          res.send({ user_data, assets });
         })
+      } else {
+        res.send({ user_data, assets });
       }
-      
-      res.send({ user_data, assets });
   });
 }
 
