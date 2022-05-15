@@ -240,9 +240,10 @@ const getAssetById = function(id) {
   let assetsRef = db.collection("assets");
   return db.collection('assets').doc(id).get().then(assetQuerySnapshot => {
     asset = getOneDoc(assetQuerySnapshot)[0];
+    console.log("Asset we got by id:", asset);
     // If doc exists, get its id:
-    if (getOneDocId(assetQuerySnapshot).length > 0)
-      asset.id = getOneDocId(assetQuerySnapshot)[0];
+    //if (getOneDocId(assetQuerySnapshot).length > 0)
+    //  asset.id = getOneDocId(assetQuerySnapshot)[0];
     return asset;
   });
 
