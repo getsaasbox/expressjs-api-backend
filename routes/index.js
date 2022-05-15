@@ -24,6 +24,7 @@ router.get("/fetch-deploy-records", jsassets.fetch_deploy_records);
 // Add submitted CDN asset to database
 router.post("/create-asset", jsassets.create_asset);
 router.post("/declare-asset-valid", jsassets.declare_asset_valid);
+router.post("/request-invalidation", jsassets.request_cdn_invalidate);
 // For this customer, autogenerate their key if it doesnt exist and return
 // For this customer, return their submitted domain.
 // For this customer, return the latest deploy link.

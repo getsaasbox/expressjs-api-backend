@@ -10,7 +10,7 @@ const AWS = require('aws-sdk')
 
 const { db } = require("./setup");
 
-const {get_file_upload_url, get_file_read_url} = require('../helpers/fileurl');
+const {get_file_upload_url, get_file_read_url, invalidate_cdn_path } = require('../helpers/fileurl');
 
 const jwt = require('jsonwebtoken');
 
@@ -174,6 +174,23 @@ const getOneUserDocId = function(querySnapshot) {
   });
 }
 
+exports.request_cdn_invalidate(req, res, next) {
+   let user_info = jwtTokenData(req, res, next);
+   if (user_info.is_admin != true) {
+    res.status(403).send({error: "Insufficient privileges (not an admin) to request invalidation\n"});
+   } else {
+    // Pass path in an array:
+    return invalidate_cdn_path([req.body.path]).then(req_data => {
+      res.send({msg: "Successful invalidation request, not saved to track yet:", req_status})
+      // Get status of invalidation and save it to the database if not finished:
+      /*return get_cdn_invalidate_status(req_data).then(req_status => {
+        // Check status, if not compledte, save to db.collection("invalidations").add()
+        // Query it on next page reload, 
+        // keep in DB if status unchanged, switch to done if it is done. Delete it if it is found done.
+      })*/
+    })
+   }
+}
 
 // Create new record when user uploads new asset.
 const createAssetRecord = function(asset) {
@@ -196,7 +213,7 @@ const createAssetRecord = function(asset) {
 }
 
 // Gets given asset at path for given user (i.e. admin)
-// Hopefully this returns id as well as it is used later.
+// Hopefully this returns id as well, as it is needed later.
 const getAssetByPath = function(fpath) {
   let assetsRef = db.collection("assets");
   let assetQuery = assetsRef.where("path", "==", fpath);
@@ -230,7 +247,7 @@ exports.declare_asset_valid = function(req, res, next) {
   let user_info = jwtTokenData(req, res, next);
   let asset = null;
   asset = getAssetById(req.body.id);
-  console.log("Asset:", asset);
+  console.log("Declare asset valid called for asset:", asset);
   asset.is_deletable = false;
   return updateAsset(asset, id).then(updated => {
     res.send({msg: "success setting assest as valid\n"});

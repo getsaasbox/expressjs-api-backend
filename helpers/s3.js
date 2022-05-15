@@ -17,6 +17,7 @@ let s3bucket = {
 	"public_url": "saasbox-files-public",
 	/* To serve public files */
 	"cdn_public_url": "https://d1vtdwko5kmvv8.cloudfront.net",
+	"distributionId": "d1vtdwko5kmvv8" // CDN distribution id for cache invalidation.
 };
 
 
@@ -42,8 +43,51 @@ const s3 = new AWS.S3({
   secretAccessKey: s3bucket.secret,
 });
 
+const cloudfront = new AWS.CloudFront({
+  accessKeyId: s3bucket.access_key,
+  secretAccessKey: s3bucket.secret,
+});
 
+exports.get_invalidate_cdn_status = function(request_data) {
 
+}
+
+// Takes an array of paths. Path can be a wildcard, e.g. politepopup/*
+exports.invalidate_cdn_path = function(paths) {
+	let callId = Date.now();
+	let params = {
+  	DistributionId: s3bucket.distributionId, /* required */
+  	InvalidationBatch: { /* required */
+    	CallerReference: callId, /* required */
+    	Paths: { /* required */
+   	    Quantity: paths.length, /* required */
+   	    Items: paths
+  	  }
+  	}
+	};
+
+	return new Promise(function(resolve, reject) {
+		cloudfront.createInvalidation(params, function(err, data) {
+		  if (err) {
+		  	console.log(err, err.stack); // an error occurred
+		  	reject(err);
+		  } else {
+		  	console.log("Success requesting invalidation with aws request obj:", data);           // successful response
+
+		  	// Return invalidation data:
+		  	let req_data = {
+		  		invalidationId: data.id,
+		  		callId: callId,
+		  		distId: s3bucket.distributionId,
+		  		paths: paths
+		  	};
+		    
+				console.log("Req details:", req_data);
+				resolve(req_data);
+			}
+		});
+	});
+}
 
 /* S3 signed url for uploading private files */
 exports.get_file_upload_private_presigned_url = function(fpath, ftype) {
