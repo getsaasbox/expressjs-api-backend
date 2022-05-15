@@ -54,7 +54,8 @@ exports.get_invalidate_cdn_status = function(request_data) {
 
 // Takes an array of paths. Path can be a wildcard, e.g. politepopup/*
 exports.invalidate_cdn_path = function(paths) {
-	let callId = Date.now();
+	let callId = Date.now().toString();
+
 	let params = {
   	DistributionId: s3bucket.distributionId, /* required */
   	InvalidationBatch: { /* required */
