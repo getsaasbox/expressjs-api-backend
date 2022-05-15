@@ -55,7 +55,7 @@ const createNewUserDocReturnExisting = async function(req, res, next, user_info)
     if (!user.exists) {
       return generateToken().then(token => {
         // Create the user as admin if that is true.
-        if (user.is_admin == true) {
+        if (user.data().is_admin == true) {
           is_admin = true;
         }
         return db.collection('js-asset-users').doc(user_info.id).set({
@@ -87,11 +87,12 @@ exports.create_get_user_info = function(req, res, next) {
   let user_data = {};
   return createNewUserDocReturnExisting(req, res, next, user_info).then(user => {
       console.log("User data:", user.data())
+      let assets;
 
       // Populate admin specific data
       if (user.data().is_admin == true) {
-        user_data.assets = user.data().assets;
         user_data.editor_contents = user.data().editor_contents;
+
       // Populate regular user data
       } else {
         user_data.domain = user.data().domain;
@@ -99,6 +100,16 @@ exports.create_get_user_info = function(req, res, next) {
       }
       // Common to both admin and user:
       user_data.is_admin = user.data().is_admin;
+      if (user.data().is_admin == true) {
+        const assetsQuerySnapshot = getDocs(collection(db, "assets"));
+
+        assets = assetsQuerySnapshot.docs.map(snapshot => {
+          let = snapshot.data();
+        })
+
+        return db.collection('assets')
+      }
+      
       res.send({ user_data });
   });
 }
