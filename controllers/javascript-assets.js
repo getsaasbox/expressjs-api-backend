@@ -246,12 +246,14 @@ const getAssetById = function(id) {
 exports.declare_asset_valid = function(req, res, next) {
   let user_info = jwtTokenData(req, res, next);
   let asset = null;
-  asset = getAssetById(req.body.id);
-  console.log("Declare asset valid called for asset:", asset);
-  asset.is_deletable = false;
-  return updateAsset(asset, id).then(updated => {
-    res.send({msg: "success setting assest as valid\n"});
-  })
+  return getAssetById(req.body.id).then(asset => {
+    console.log("Declare asset valid called for asset:", asset);
+    asset.is_deletable = false;
+    return updateAsset(asset, req.body.id).then(updated => {
+      res.send({msg: "success setting assest as valid\n"});
+    });
+  });
+  
 }
 
 // FIXME: Add CDN URL INstead, add timestamp.
