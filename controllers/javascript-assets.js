@@ -30,8 +30,6 @@ const generateToken = function() {
   });
 }
 
-    
-
 // FIXME: add JWT secret.
 const jwt_secret = process.env.jassets_app_jwt_secret;
 
@@ -238,8 +236,10 @@ const updateAsset = function(asset, id) {
 
 const getAssetById = function(id) {
   let assetsRef = db.collection("assets");
-  return assetsRef.doc(id).get().then(assetQuerySnapshot => {
-    asset = getOneDoc(assetQuerySnapshot)[0];
+  let asset = null
+  return assetsRef.doc(id).get().then(assetData => {
+    asset = assetData.data();
+    asset.id = id;
     console.log("Asset we got by id:", asset);
     // If doc exists, get its id:
     //if (getOneDocId(assetQuerySnapshot).length > 0)
