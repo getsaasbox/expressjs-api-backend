@@ -17,10 +17,6 @@ router.get('/', function(req, res, next) {
 
 router.get("/get-embed-url", quicksight.get_anon_embed_url);
 
-
-// Get history of javascript file deploys to display in a table.
-router.get("/fetch-deploy-records", jsassets.fetch_deploy_records);
-
 // Add submitted CDN asset to database
 router.post("/create-asset", jsassets.create_asset);
 router.post("/declare-asset-valid", jsassets.declare_asset_valid);
