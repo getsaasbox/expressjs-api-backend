@@ -80,7 +80,7 @@ exports.getInvalidationStatus = function(req_data) {
 				resolve(req_data_updated);
 			}
 		});
-	}
+	});
 }
 
 // Takes an array of paths. Path can be a wildcard, e.g. politepopup/*
