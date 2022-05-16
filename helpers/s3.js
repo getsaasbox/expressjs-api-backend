@@ -48,8 +48,39 @@ const cloudfront = new AWS.CloudFront({
   secretAccessKey: s3bucket.secret,
 });
 
-exports.get_invalidate_cdn_status = function(request_data) {
-
+/*let req_data = {
+  invalidationId: data.Invalidation.Id,
+  callId: callId,
+  distId: s3bucket.distributionId,
+  paths: paths,
+  status: data.Invalidation.Status
+};*/
+exports.getInvalidationStatus = function(req_data) {
+	let params = {
+		DistributionId: req_data.distId,
+		Id: req_data.invalidationId
+	}
+	return new Promise(function(resolve, reject) {
+		cloudfront.getInvalidation(params, function(err, data) {
+			if (err) {
+				console.log(err, err.stack);
+				reject(err);
+			} else {
+				console.log("Success getting invalidation status:", data);
+				// Return invalidation data:
+		  	let req_data_updated = {
+		  		invalidationId: data.Invalidation.Id,	// Data from request
+		  		callId: req_data.callId,	// Existing call id we defined (i.e. call timestamp)
+		  		distId: s3bucket.distributionId,	// Configured dist id.
+		  		paths: req_data.paths,						// Existing paths
+		  		status: data.Invalidation.Status 	// Updated status.
+		  	};
+		    
+				console.log("Updated req details:", req_data_updated);
+				resolve(req_data_updated);
+			}
+		});
+	}
 }
 
 // Takes an array of paths. Path can be a wildcard, e.g. politepopup/*

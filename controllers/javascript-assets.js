@@ -12,7 +12,7 @@ const { db } = require("./setup");
 
 const {get_file_upload_url, get_file_read_url } = require('../helpers/fileurl');
 
-const { invalidate_cdn_path } = require('../helpers/s3');
+const { invalidate_cdn_path, getInvalidationStatus } = require('../helpers/s3');
 
 const jwt = require('jsonwebtoken');
 
@@ -77,6 +77,38 @@ const createNewUserDocReturnExisting = async function(req, res, next, user_info)
   });
 }
 
+// It is plural as there may be multiple invalidation requests in a given time
+// Even though most of the time it will be 1 or 2 in flight.
+// 1. Queries status of all invalidations in database from AWS.
+// 2. If they are done, deletes them from the database.
+// 3. Returns all initially queried invalidations, to show them all (and completed ones one last time)
+const queryInvalidations = function(invals) {
+  let promises = []
+  let deleteDone = []
+  // 
+  for (let i = 0; i < invals.length; i++) {
+    promises.push(getInvalidationStatus(invals[i]));
+  }
+  // Get updated inval status
+  return Promise.all(promises).then(updated_invals => {
+
+    // If they are in "DONE" state, delete from the database, but return it for this time to show
+    // their status.
+    for (let i = 0; i < updated_invals.length; i++) {
+      // If they are in "DONE" state, delete from the database, but return it for this time to show their status.
+      if (updated_invals[i].status == "Completed") {
+        deleteDone.push(db.collection("invalidations").doc(updated_invals[i].invalidationId).delete())
+      }
+    }
+    // Delete all those invalidations who are now "Complete"
+    return Promise.all(deleteDone).then(deleted => {
+      // Still, return all the updated invals we found, so we show their "Complete" state one last time,
+      // or they are still in pending state:
+      return updated_invals;
+    });
+  });
+}
+
 //
 // On page load for admin or regular user
 // creates the user if it didnt exist.
@@ -89,6 +121,8 @@ exports.create_get_user_info = function(req, res, next) {
       console.log("User data:", user.data())
       let assets;
       let assetsRef;
+      let invals;
+      let invalsRef;
 
       // Populate admin specific data
       if (user.data().is_admin == true) {
@@ -109,7 +143,17 @@ exports.create_get_user_info = function(req, res, next) {
           assets = assetsQuerySnapshot.docs.map(doc => {
             return doc.data();
           });
-          res.send({ user_data, assets });
+          // Also fetch any pending invalidations:
+          invalsRef = db.collection("invalidations");
+          return invalsRef.get().then(invalsQuerySnapshot => {
+            invals = invalsQuerySnapshot.docs.map(doc => {
+              return doc.data();
+            });
+            // Get latest status and store to database.
+            return queryInvalidations(invals).then(updated_invals => {
+              res.send({ user_data, assets, invals: updated_invals});
+            });
+          }) 
         })
       } else {
         res.send({ user_data, assets });
@@ -126,30 +170,6 @@ const updateUserDomain = async function(req, res, next, user_info, domain) {
   }).catch(err => {
     return { error: "Failed saving user credentials.\n" + err };
   });
-}
-
-// FIXME: Is this unused? Fetch records that admin has created
-exports.fetch_deploy_records = function(req, res, next) {
-  let user_info = jwtTokenData(req, res, next);
-
-  if (user_info.is_admin == false) {
-    res.status(200).send({error: "Not an admin user"});
-  } else {
-    let historiesRef = db.collection('js-asset-users').doc(user_info.id).collection('history');
-    //return historiesRef.orderBy('createdAt', 'desc').limit(10).get()
-    return historiesRef.limit(10).get().then(histories => {
-
-      let opRecords = [];
-
-      histories.forEach(snap => {
-        opRecords.push(snap.data());
-      })
-      //console.log("Last few operational records:", opRecords);
-      res.status(200).send({opRecords});
-    }).catch(err => {
-      console.log("Error fetching image optimization op records. Error: \n", err);
-    });
-  }
 }
 
 const getOneDoc = function(querySnapshot) {
@@ -174,8 +194,12 @@ const getOneUserDocId = function(querySnapshot) {
   });
 }
 
+// Make an invalidation request for array of paths (currently just one)
+// Then save the invalidation status in the database,
+// Return the inval status as an AJAX reply so it can be displayed in an alert element.
 exports.request_cdn_invalidate = function(req, res, next) {
    let user_info = jwtTokenData(req, res, next);
+   let invalRef;
    if (user_info.is_admin != true) {
     res.status(403).send({error: "Insufficient privileges (not an admin) to request invalidation\n"});
    } else {
@@ -189,9 +213,14 @@ exports.request_cdn_invalidate = function(req, res, next) {
         paths: paths,
         status: data.Invalidation.Status
       };*/
-      res.send({
-        msg: "Successful invalidation request, not saved to track yet:",
-        req_status: req_status
+
+      // Store status in firebase for page reload, and use invalidation Id as firebase ID.
+      invalRef = db.collection("invalidations").doc(req_status.invalidationId);
+      return invalRef.set(req_status).then(added =>{
+        res.send({
+          msg: "Successful invalidation request, not saved to track yet:",
+          req_status: req_status
+        });
       });
       // Get status of invalidation and save it to the database if not finished:
       /*return get_cdn_invalidate_status(req_data).then(req_status => {
