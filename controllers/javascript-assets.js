@@ -85,7 +85,6 @@ const createNewUserDocReturnExisting = async function(req, res, next, user_info)
 const queryInvalidations = function(invals) {
   let promises = []
   let deleteDone = []
-  // 
   for (let i = 0; i < invals.length; i++) {
     promises.push(getInvalidationStatus(invals[i]));
   }
@@ -362,9 +361,9 @@ exports.create_asset = function(req, res, next) {
 }
 
 // Update regular user's admin script text from the editor.
-const updateAdminScript = async function(req, res, next, user_info, editor_content) {
+const updateAdminScript = async function(req, res, next, user_info, editor_contents) {
   return db.collection('js-asset-users').doc(user_info.id).set({
-    editor_content: editor_content,
+    editor_contents: editor_contents,
     }, { merge: true }).then(result => {
     return 0;
   }).catch(err => {
@@ -379,7 +378,7 @@ const updateAdminScript = async function(req, res, next, user_info, editor_conte
 exports.save_script_template = function(req, res, next) {
   let user_info = jwtTokenData(req, res, next);
   if (user_info.is_admin == true) {
-    return updateAdminScript(req, res, next, user_info, req.body.editor_content).then(updated => {
+    return updateAdminScript(req, res, next, user_info, req.body.editor_contents).then(updated => {
       res.send({ msg: "Success updating editor contents\n" });
     })
   } else {
