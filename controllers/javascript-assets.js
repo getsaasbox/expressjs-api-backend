@@ -282,15 +282,13 @@ const getAssetById = function(id) {
     asset = assetData.data();
     asset.id = id;
     console.log("Asset we got by id:", asset);
-    // If doc exists, get its id:
-    //if (getOneDocId(assetQuerySnapshot).length > 0)
-    //  asset.id = getOneDocId(assetQuerySnapshot)[0];
+
     return asset;
   });
 
 }
 
-// TODO: Called after successful s3 upload to make is_deletable: false
+// Called after successful s3 upload to make is_deletable: false
 exports.declare_asset_valid = function(req, res, next) {
   let user_info = jwtTokenData(req, res, next);
   let asset = null;
@@ -304,8 +302,6 @@ exports.declare_asset_valid = function(req, res, next) {
   
 }
 
-// FIXME: Add CDN URL INstead, add timestamp.
-// FIXME: Also add CDN invalidate call.
 exports.create_asset = function(req, res, next) {
   let user_info = jwtTokenData(req, res, next);
   const file_meta = req.body.file_meta
