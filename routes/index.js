@@ -43,7 +43,7 @@ router.post("/check-customer-license", jsassets.check_customer_license);
 router.get("/daco-create-get-user", cluvio.create_get_user_info);
 
 // Edit dashboard parameters for a single org, single dashboard:
-route.post("/:org/edit-daco-org", cluvio.edit_org);
+router.post("/:org/edit-daco-org", cluvio.edit_org);
 
 
 module.exports = router;
