@@ -76,6 +76,7 @@ const optionsToUrl = function(dashboard, sharingToken, expiration, secret, filte
   return url;
 }
 
+// Parse commandline options to generate cluvio url.
 const cluvioCommandToUrl = function(cmdlineOptions) {
   let dashboard, sharingToken, secret, expiration, filters;
 
@@ -231,17 +232,14 @@ const updateOrg = function(id, org) {
   });
 }
 
-const generateUrlFromCommand = function(command) {
-  // TODO: Parse commandline options to generate cluvio url.
-}
-
 exports.edit_org = function(req, res, next) {
     let user_info = jwtTokenData(req, res, next);
     let user_data = {};
     let org = {
+      name: req.body.name,
       command: req.body.command
     };
-    let url = generateUrlFromCommand(org.command);
+    let url = cluvioCommandToUrl(org.command);
     org.url = url;
 
     if (user_info.is_admin != true) {
