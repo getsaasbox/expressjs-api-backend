@@ -19,8 +19,6 @@ let parser = require('tld-extract');
 // FIXME: add JWT secret.
 const jwt_secret = process.env.cluvio_app_jwt_secret;
 
-const jwt = require('jsonwebtoken');
-
 const jwtTokenData = function(req, res, next) {
 	const token = req.header('Authorization').replace('Bearer', '').trim();
   // console.log("Token:", token);
