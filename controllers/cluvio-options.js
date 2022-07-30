@@ -32,6 +32,7 @@ try {
 
 	let url;
 
+	let filter_name, filter_values;
 	//let args = ["--filter", "5"];
 	var unparsed = parser.parse();
 
@@ -50,10 +51,10 @@ try {
 		console.log("Required parameter missing: dashboard, sharingToken or secret.")
 	}
 	hash.sharing_token = sharingToken;
-	//FIXME: Fix this:
-	//hash.exp = Date().now() + expiration
+	//FIXME: Test this:
+	hash.exp = Date.now() + expiration
 	hash.fixed_parameters = {};
-	// FIXME: Test,
+
 	for (let i = 0; i < filters.length; i++) {
 		filter_name = filters[i].split(":")[0];
 		// Create a value array of not these options

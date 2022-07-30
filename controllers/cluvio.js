@@ -19,6 +19,7 @@ let parser = require('tld-extract');
 // FIXME: add JWT secret.
 const jwt_secret = process.env.cluvio_app_jwt_secret;
 
+const jwt = require('jsonwebtoken');
 
 const jwtTokenData = function(req, res, next) {
 	const token = req.header('Authorization').replace('Bearer', '').trim();
@@ -34,6 +35,79 @@ const getUserEmailDomain = function(email) {
   const address = email.split('@').pop()
   const domain = parser(address).domain;
   return domain;
+}
+
+let OptionParser = require('option-parser');
+let parser = new OptionParser();
+
+
+// Takes parsed options, generates url with JWT signed/encrypted sharingToken
+const optionsToUrl = function(dashboard, sharingToken, expiration, secret, filters) {
+  let hash = {};
+  let sharing_secret;
+  let url = "";
+
+  if (!dashboard || !sharingToken || !expiration || !secret) {
+    console.log("Required parameter missing: dashboard, sharingToken or secret.")
+  }
+
+  hash.sharing_token = sharingToken;
+  
+  // FIXME: Test this:
+  hash.exp = Date.now() + expiration
+  hash.fixed_parameters = {};
+
+  for (let i = 0; i < filters.length; i++) {
+    filter_name = filters[i].split(":")[0];
+    // Create a value array if not these options
+    if (filter_name != "aggregation" && filter_name != "timerange")
+      filter_values = filters[i].split(":")[1].split(",");
+    else
+      // Use value directly if aggregation or timerange
+      filter_values = filters[i].split(":")[1];
+    
+    // Save filter into hash as part of fixed_parameters object.
+    hash.fixed_parameters.filter_name = filter_values;
+  }
+
+  // Hash is ready, now let's sign it: (Ruby code uses jwt.encode, I expect below is equivalent)
+  sharing_secret = jwt.sign(hash, secret);
+  url = "https://dashboards.cluvio.com/dashboards/" + dashboard + 
+  "/shared?sharingToken=" + sharing_token + "&sharingSecret=" + sharing_secret;
+
+  return url;
+}
+
+const cluvioCommandToUrl = function(cmdlineOptions) {
+  let dashboard, sharingToken, secret, expiration, filters;
+
+  let url;
+
+  let filter_name, filter_values;
+  //let args = ["--filter", "5"];
+  var unparsed = parser.parse();
+
+  parser.addOption('f', 'filter', 'Turn on some flag', 'filter').argument('short')
+  parser.addOption('d', 'dashboard', null, 'dashboard').argument('short');
+  parser.addOption('e', 'expiration', null, 'expiration').argument('short');
+  parser.addOption('t', 'token', null, 'token').argument('short');
+  parser.addOption('s', 'secret', null, 'secret').argument('short');
+
+  let dashboard, sharingToken, secret, expiration, filters;
+  let hash = {};
+  let sharing_secret;
+
+  let url;
+
+  let filter_name, filter_values;
+  let args = cmdlineOptions.split(" ");
+  var unparsed = parser.parse(args);
+  dashboard = parser.dashboard.value();
+  sharingToken = parser.token.value();
+  expiration = parser.expiration.value();
+  secret = parser.secret.value();
+  filters = parser.getOpt().filter;
+  return optionsToUrl(dashboard, sharingToken, expiration, secret, filters);
 }
 
 //
