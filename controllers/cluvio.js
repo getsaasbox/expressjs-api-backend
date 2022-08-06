@@ -117,6 +117,7 @@ const createUsersOrg = function(req, res, next, user_info) {
   // Query all organizations by domain
   let org = getOrgByDomain(domain);
   
+  console.log("Org retrieed:", org);
   // If no organization with this domain
   if (!org) {
     // Create new org
@@ -197,6 +198,7 @@ exports.create_get_user_info = function(req, res, next) {
 
 // Create new org, with / without dashboard params
 const createOrg = function(org) {
+  console.log("creating new organization:", org);
   return db.collection("orgs").add(org).then(orgRef => {
    return db.collection("orgs").doc(orgRef.id).get();
   }).catch(err => {
@@ -225,6 +227,7 @@ const getOrgByDomain = function(domain) {
   let orgQuery = orgsRef.where("domain", "==", domain);
   let org = null;
   return orgQuery.get().then(orgQuerySnapshot => {
+    console.log("orgQuery.get:", org);
     org = getOneDoc(orgQuerySnapshot)[0];
     // If doc exists, get its id:
     if (getOneDocId(orgQuerySnapshot).length > 0) {
