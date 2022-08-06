@@ -117,12 +117,12 @@ const createUsersOrg = function(req, res, next, user_info) {
   let domain = getUserEmailDomain(user_info.email);
 
   // Query all organizations by domain
-  let org = getOrgById(domain);
+  let org = getOrgByDomain(domain);
   
   // If no organization with this domain
   if (!org) {
     // Create new org
-    return createOrg(domain, {});
+    return createOrg({ domain });
   } else {
     // FIXME: Return empty promise.
     return new Promise((resolve,reject) => { resolve(0); });
@@ -184,7 +184,7 @@ exports.create_get_user_info = function(req, res, next) {
         })
       } else {
           // FIXME: Get the current org from orgs:
-          return getOrgById(getUserEmailDomain(user_data.email)).then(org => {
+          return getOrgByDomain(getUserEmailDomain(user_data.email)).then(org => {
             if (!org) {
               res.send({error: "Internal server error. Org had to exist even if empty, but could not be found\n"});
             } else {
@@ -197,9 +197,9 @@ exports.create_get_user_info = function(req, res, next) {
 }
 
 // Create new org, with / without dashboard params
-const createOrg = function(name, org) {
-  return db.collection("orgs").doc(name).set(org).then(orgRef => {
-   return db.collection("orgs").doc(name).get();
+const createOrg = function(org) {
+  return db.collection("orgs").add(org).then(orgRef => {
+   return db.collection("orgs").doc(orgRef.id).get();
   }).catch(err => {
     return new Promise((resolve,reject) => { 
       resolve({ error: "Failed to create user in Firestore.\n" + err });
@@ -208,6 +208,17 @@ const createOrg = function(name, org) {
 }
 exports.createOrg = createOrg;
 
+
+const getOneDoc = function(querySnapshot) {
+  return querySnapshot.docs.map(docSnapshot => {
+    return docSnapshot.data();
+  });
+}
+const getOneDocId = function(querySnapshot) {
+  return querySnapshot.docs.map(docSnapshot => {
+    return docSnapshot.id;
+  });
+}
 
 // Unused: Get org by given email domain. We use domain as id so this is not needed.
 const getOrgByDomain = function(domain) {
@@ -228,7 +239,7 @@ const updateOrg = function(id, org) {
   return db.collection('orgs').doc(id).set(org, { merge: true }).then(result => {
     return 0;
   }).catch(err => {
-    return new Promise((resolve,reject) => { reject({error: "Failed to update org\n"}); });
+    return new Promise((resolve, reject) => { reject({error: "Failed to update org\n"}); });
   });
 }
 
@@ -245,7 +256,7 @@ exports.edit_org = function(req, res, next) {
     if (user_info.is_admin != true) {
       res.send({ error: "Error: Forbidden. Not an admin."})
     } else {
-      return updateOrg(req.params.org, org).then(updated => {
+      return updateOrg(req.body.id, org).then(updated => {
         res.send({ msg: "Successfully saved organization with new url"});
       }).catch(err => {
         res.send(err);
@@ -263,8 +274,3 @@ const getOrgById = function(id) {
     return org;
   });
 }
-
-
-
-
-
