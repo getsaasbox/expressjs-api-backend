@@ -32,8 +32,9 @@ let tldparser = require('tld-extract');
 const getUserEmailDomain = function(email) {
   console.log("Email:", email)
   const address = email.split('@')[1];
-  const domain = tldparser(address).domain;
-  return domain;
+  return address;
+  //const domain = tldparser(address).domain;
+  //return domain;
 }
 
 let OptionParser = require('option-parser');
