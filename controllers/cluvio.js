@@ -256,16 +256,17 @@ exports.edit_org = function(req, res, next) {
     let user_info = jwtTokenData(req, res, next);
     let user_data = {};
     let org = {
-      name: req.body.name,
-      command: req.body.command
+      cmdline: req.body.cmdline
     };
-    let url = cluvioCommandToUrl(org.command);
-    org.url = url;
+
+    // TODO:
+    //let url = cluvioCommandToUrl(org.command);
+    //org.url = url;
 
     if (user_info.is_admin != true) {
       res.send({ error: "Error: Forbidden. Not an admin."})
     } else {
-      return updateOrg(req.body.id, org).then(updated => {
+      return updateOrg(req.params.orgId, org).then(updated => {
         res.send({ msg: "Successfully saved organization with new url"});
       }).catch(err => {
         res.send(err);
