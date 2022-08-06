@@ -177,7 +177,9 @@ exports.create_get_user_info = function(req, res, next) {
         orgsRef = db.collection("orgs");
         return orgsRef.get().then(orgsQuerySnapshot => {
           orgs = orgsQuerySnapshot.docs.map(doc => {
-            return doc.data();
+            let data = doc.data();
+            let data.id = doc.id;
+            return data;
           });
           // Admin gets an array of orgs data
           res.send({ user_data, orgs});
