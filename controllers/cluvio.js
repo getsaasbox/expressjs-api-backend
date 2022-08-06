@@ -30,6 +30,7 @@ const jwtTokenData = function(req, res, next) {
 let tldparser = require('tld-extract');
 
 const getUserEmailDomain = function(email) {
+  console.log("Email:", email)
   const address = email.split('@').pop()
   const domain = tldparser(address).domain;
   return domain;
@@ -167,7 +168,7 @@ exports.create_get_user_info = function(req, res, next) {
 
       // Common to both admin and user:
       user_data.is_admin = user.data().is_admin;
-
+      user_data.email = user.data().email;
       // Also fetch per-client-domain specific dashboard data for admin user
       if (user.data().is_admin == true) {
         orgsRef = db.collection("orgs");
