@@ -178,7 +178,7 @@ exports.create_get_user_info = function(req, res, next) {
         return orgsRef.get().then(orgsQuerySnapshot => {
           orgs = orgsQuerySnapshot.docs.map(doc => {
             let data = doc.data();
-            let data.id = doc.id;
+            data.id = doc.id;
             return data;
           });
           // Admin gets an array of orgs data
