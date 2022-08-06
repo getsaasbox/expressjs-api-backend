@@ -31,7 +31,7 @@ let tldparser = require('tld-extract');
 
 const getUserEmailDomain = function(email) {
   console.log("Email:", email)
-  const address = email.split('@').pop()
+  const address = email.split('@')[1];
   const domain = tldparser(address).domain;
   return domain;
 }
