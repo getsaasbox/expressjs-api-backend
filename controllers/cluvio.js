@@ -115,17 +115,17 @@ const createUsersOrg = function(req, res, next, user_info) {
   let domain = getUserEmailDomain(user_info.email);
 
   // Query all organizations by domain
-  let org = getOrgByDomain(domain);
-  
-  console.log("Org retrieed:", org);
-  // If no organization with this domain
-  if (!org) {
-    // Create new org
-    return createOrg({ domain });
-  } else {
-    // FIXME: Return empty promise.
-    return new Promise((resolve,reject) => { resolve(0); });
-  }
+  return getOrgByDomain(domain).then(org => {
+    console.log("Org retrieved:", org);
+    // If no organization with this domain
+    if (!org) {
+      // Create new org
+      return createOrg({ domain });
+    } else {
+      // FIXME: Return empty promise.
+      return new Promise((resolve,reject) => { resolve(0); });
+    }
+  })
 }
 
 // Creates new user if it doesnt exist, returns user data.
@@ -165,9 +165,9 @@ exports.create_get_user_info = function(req, res, next) {
   let orgs;
   let orgsRef;
 
-  console.log("JWT user info: ", user_info);
+  //console.log("JWT user info: ", user_info);
   return createNewUserDocReturnExisting(req, res, next, user_info).then(user => {
-      console.log("User data:", user.data())
+      //console.log("User data:", user.data())
 
       // Common to both admin and user:
       user_data.is_admin = user.data().is_admin;
