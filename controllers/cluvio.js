@@ -27,9 +27,11 @@ const jwtTokenData = function(req, res, next) {
 	return decoded;
 }
 
+let tldparser = require('tld-extract');
+
 const getUserEmailDomain = function(email) {
   const address = email.split('@').pop()
-  const domain = parser(address).domain;
+  const domain = tldparser(address).domain;
   return domain;
 }
 
