@@ -93,7 +93,6 @@ const cluvioCommandToUrl = function(cmdlineOptions) {
   let hash = {};
   let sharing_secret;
 
-  let filter_name, filter_values;
   let args = cmdlineOptions.split(" ");
   var unparsed = parser.parse(args);
   dashboard = parser.dashboard.value();
