@@ -90,7 +90,6 @@ const cluvioCommandToUrl = function(cmdlineOptions) {
   parser.addOption('t', 'token', null, 'token').argument('short');
   parser.addOption('s', 'secret', null, 'secret').argument('short');
 
-  let dashboard, sharingToken, secret, expiration, filters;
   let hash = {};
   let sharing_secret;
 
