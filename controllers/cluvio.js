@@ -163,6 +163,7 @@ exports.create_get_user_info = function(req, res, next) {
   let orgs;
   let orgsRef;
 
+  console.log("JWT user info: ", user_info);
   return createNewUserDocReturnExisting(req, res, next, user_info).then(user => {
       console.log("User data:", user.data())
 
