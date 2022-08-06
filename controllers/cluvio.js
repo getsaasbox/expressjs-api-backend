@@ -227,9 +227,12 @@ const getOrgByDomain = function(domain) {
   return orgQuery.get().then(orgQuerySnapshot => {
     org = getOneDoc(orgQuerySnapshot)[0];
     // If doc exists, get its id:
-    if (getOneDocId(orgQuerySnapshot).length > 0)
+    if (getOneDocId(orgQuerySnapshot).length > 0) {
       org.id = getOneDocId(orgQuerySnapshot)[0];
-    return org;
+      return org;
+    } else {
+      return null;
+    }
   })
 }
 
