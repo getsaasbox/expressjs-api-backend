@@ -14,8 +14,6 @@ const { doc, setDoc, collection, getDocs } = require("firebase/firestore");
 
 const crypto = require("crypto");
 
-let parser = require('tld-extract');
-
 // FIXME: add JWT secret.
 const jwt_secret = process.env.cluvio_app_jwt_secret;
 
