@@ -73,6 +73,7 @@ const optionsToUrl = function(dashboard, sharingToken, expiration, secret, filte
     hash.fixed_parameters.filter_name = filter_values;
   }
 
+  console.log("Secret:", secret);
   // Hash is ready, now let's sign it: (Ruby code uses jwt.encode, I expect below is equivalent)
   sharingSecret = jwt.sign(hash, secret);
   url = "https://dashboards.cluvio.com/dashboards/" + dashboard + 
