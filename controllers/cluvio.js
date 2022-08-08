@@ -45,6 +45,8 @@ const optionsToUrl = function(dashboard, sharingToken, expiration, secret, filte
   let hash = {};
   let sharingSecret;
   let url = "";
+  let filter_name, filter_values;
+  let splitkv;
 
   if (!dashboard || !sharingToken || !expiration || !secret) {
     console.log("Required parameter missing: dashboard, sharingToken or secret.")
@@ -62,22 +64,26 @@ const optionsToUrl = function(dashboard, sharingToken, expiration, secret, filte
     // Create a value array if not these options
     if (!filters[i].startsWith("aggregation") && !filters[i].startsWith("timerange")) {
       console.log("Doesnt start with aggregration or timerange")
-      filter_values = filters[i].split(":")[1].split(",");
-    }
-    else
+      splitkv = filters[i].split(":");
+      filter_name = splitkv[0];
+      filter_values = splitkv[1].split(",");
+    } else {
+      splitkv = filters[i].split(":");
+      filter_name = splitkv[0];
       // Use value directly if aggregation or timerange
-      filter_values = filters[i].split(":")[1];
-    
+      filter_values = splitkv[1];
+    }
     // Save filter into hash as part of fixed_parameters object.
-    hash.fixed_parameters.filter_name = filter_values;
+    hash.fixed_parameters[filter_name] = filter_values;
   }
 
-  console.log("Secret:", secret);
   // Hash is ready, now let's sign it: (Ruby code uses jwt.encode, I expect below is equivalent)
   sharingSecret = jwt.sign(hash, secret);
   url = "https://dashboards.cluvio.com/dashboards/" + dashboard + 
   "/shared?sharingToken=" + sharingToken + "&sharingSecret=" + sharingSecret;
   console.log("url:", url);
+
+  console.log("decoded secret:", jwt.decode(sharingSecret, secret));
   return url;
 }
 
