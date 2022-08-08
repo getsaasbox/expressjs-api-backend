@@ -38,7 +38,6 @@ const getUserEmailDomain = function(email) {
 }
 
 let OptionParser = require('option-parser');
-const jwt = require('jsonwebtoken');
 
 let parser = new OptionParser();
 
