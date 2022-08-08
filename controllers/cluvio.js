@@ -39,7 +39,6 @@ const getUserEmailDomain = function(email) {
 
 let OptionParser = require('option-parser');
 
-let parser = new OptionParser();
 
 // Takes parsed options, generates url with JWT signed/encrypted sharingToken
 const optionsToUrl = function(dashboard, sharingToken, expiration, secret, filters) {
@@ -90,6 +89,9 @@ const cluvioCommandToUrl = function(cmdlineOptions) {
 
   let filter_name, filter_values;
   //let args = ["--filter", "5"];
+
+  // Create new parser every time.
+  let parser = new OptionParser();
 
   parser.addOption('f', 'filter', null, 'filter').argument('short')
   parser.addOption('d', 'dashboard', null, 'dashboard').argument('short');
