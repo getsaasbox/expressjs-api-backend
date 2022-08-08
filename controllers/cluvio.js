@@ -38,13 +38,14 @@ const getUserEmailDomain = function(email) {
 }
 
 let OptionParser = require('option-parser');
-let parser = new OptionParser();
+const jwt = require('jsonwebtoken');
 
+let parser = new OptionParser();
 
 // Takes parsed options, generates url with JWT signed/encrypted sharingToken
 const optionsToUrl = function(dashboard, sharingToken, expiration, secret, filters) {
   let hash = {};
-  let sharing_secret;
+  let sharingSecret;
   let url = "";
 
   if (!dashboard || !sharingToken || !expiration || !secret) {
@@ -54,14 +55,17 @@ const optionsToUrl = function(dashboard, sharingToken, expiration, secret, filte
   hash.sharing_token = sharingToken;
   
   // FIXME: Test this:
-  hash.exp = Date.now() + expiration
+  hash.exp = Number(expiration);
   hash.fixed_parameters = {};
 
+  console.log("Filters:", filters)
   for (let i = 0; i < filters.length; i++) {
-    filter_name = filters[i].split(":")[0];
+    console.log("filters status:", filters[i])
     // Create a value array if not these options
-    if (filter_name != "aggregation" && filter_name != "timerange")
+    if (!filters[i].startsWith("aggregation") && !filters[i].startsWith("timerange")) {
+      console.log("Doesnt start with aggregration or timerange")
       filter_values = filters[i].split(":")[1].split(",");
+    }
     else
       // Use value directly if aggregation or timerange
       filter_values = filters[i].split(":")[1];
@@ -71,10 +75,10 @@ const optionsToUrl = function(dashboard, sharingToken, expiration, secret, filte
   }
 
   // Hash is ready, now let's sign it: (Ruby code uses jwt.encode, I expect below is equivalent)
-  sharing_secret = jwt.sign(hash, secret);
+  sharingSecret = jwt.sign(hash, secret);
   url = "https://dashboards.cluvio.com/dashboards/" + dashboard + 
-  "/shared?sharingToken=" + sharing_token + "&sharingSecret=" + sharing_secret;
-
+  "/shared?sharingToken=" + sharingToken + "&sharingSecret=" + sharingSecret;
+  console.log("url:", url);
   return url;
 }
 
@@ -86,9 +90,8 @@ const cluvioCommandToUrl = function(cmdlineOptions) {
 
   let filter_name, filter_values;
   //let args = ["--filter", "5"];
-  var unparsed = parser.parse();
 
-  parser.addOption('f', 'filter', 'Turn on some flag', 'filter').argument('short')
+  parser.addOption('f', 'filter', null, 'filter').argument('short')
   parser.addOption('d', 'dashboard', null, 'dashboard').argument('short');
   parser.addOption('e', 'expiration', null, 'expiration').argument('short');
   parser.addOption('t', 'token', null, 'token').argument('short');
@@ -97,15 +100,18 @@ const cluvioCommandToUrl = function(cmdlineOptions) {
   let hash = {};
   let sharing_secret;
 
+  //var unparsed = parser.parse();
+
   let args = cmdlineOptions.split(" ");
   var unparsed = parser.parse(args);
   dashboard = parser.dashboard.value();
   sharingToken = parser.token.value();
   expiration = parser.expiration.value();
   secret = parser.secret.value();
-  filters = parser.getOpt().filter;
+  filters = parser.getopt().filter;
   return optionsToUrl(dashboard, sharingToken, expiration, secret, filters);
 }
+
 
 //
 // For each new user, add them to the right Organization by their email ending.
@@ -259,9 +265,10 @@ exports.edit_org = function(req, res, next) {
       cmdline: req.body.cmdline
     };
 
-    // TODO:
-    //let url = cluvioCommandToUrl(org.command);
-    //org.url = url;
+    console.log("Cmdline:", org.cmdline);
+    let url = cluvioCommandToUrl(org.cmdline);
+    org.url = url;
+    console.log("Embed url:", org.url);
 
     if (user_info.is_admin != true) {
       res.send({ error: "Error: Forbidden. Not an admin."})
