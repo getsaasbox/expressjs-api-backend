@@ -109,6 +109,11 @@ const cluvioCommandToUrl = function(cmdlineOptions) {
   expiration = parser.expiration.value();
   secret = parser.secret.value();
   filters = parser.getopt().filter;
+  console.log("dashboard:", dashboard);
+  console.log("sharingToken:", sharingToken);
+  console.log("expiration:", expiration);
+  console.log("secret:", secret);
+  console.log("filters:", filters);
   return optionsToUrl(dashboard, sharingToken, expiration, secret, filters);
 }
 
