@@ -274,14 +274,44 @@ const updateOrg = function(id, org) {
 exports.edit_org = function(req, res, next) {
     let user_info = jwtTokenData(req, res, next);
     let user_data = {};
-    let org = {
-      cmdline: req.body.cmdline
-    };
+    let dashboards = req.body.dashboards;
 
-    console.log("Cmdline:", org.cmdline);
-    let url = cluvioCommandToUrl(org.cmdline);
-    org.url = url;
-    console.log("Embed url:", org.url);
+    // Array of name / cmdline pairs:
+    let org = null
+
+    // Generate the url for all dashboards.
+    for (let i = 0; i < dashboards.length; i++) {
+      dashboards[i].url = cluvioCommandToUrl(dashboards[i].cmdline);
+    }
+
+    org = { dashboards };
+
+    if (user_info.is_admin != true) {
+      res.send({ error: "Error: Forbidden. Not an admin."})
+    } else {
+      return updateOrg(req.params.orgId, org).then(updated => {
+        res.send({ msg: "Successfully saved organization with new url"});
+      }).catch(err => {
+        res.send(err);
+      })
+    }
+}
+
+
+exports.edit_org_all_dashboards = function(req, res, next) {
+    let user_info = jwtTokenData(req, res, next);
+    let user_data = {};
+    let dashboards = req.body.dashboards;
+
+    // Array of name / cmdline pairs:
+    let org = null
+
+    // Generate the url for all dashboards.
+    for (let i = 0; i < dashboards.length; i++) {
+      dashboards[i].url = cluvioCommandToUrl(dashboards[i].cmdline);
+    }
+
+    org = { dashboards };
 
     if (user_info.is_admin != true) {
       res.send({ error: "Error: Forbidden. Not an admin."})
