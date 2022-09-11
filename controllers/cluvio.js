@@ -47,9 +47,11 @@ const optionsToUrl = function(dashboard, sharingToken, expiration, secret, filte
   let url = "";
   let filter_name, filter_values;
   let splitkv;
-
+  let optToUrl = { url: null, error: null}
   if (!dashboard || !sharingToken || !expiration || !secret) {
-    console.log("Required parameter missing: dashboard, sharingToken or secret.")
+    console.log("Required parameter missing: dashboard, sharingToken or secret.");
+    optToUrl.error = "Required parameter missing: dashboard, sharingToken or secret.";
+    return optToUrl;
   }
 
   hash.sharing_token = sharingToken;
@@ -82,9 +84,9 @@ const optionsToUrl = function(dashboard, sharingToken, expiration, secret, filte
   url = "https://dashboards.cluvio.com/dashboards/" + dashboard + 
   "/shared?sharingToken=" + sharingToken + "&sharingSecret=" + sharingSecret;
   console.log("url:", url);
-
+  optToUrl.url = url;
   console.log("decoded secret:", jwt.decode(sharingSecret, secret));
-  return url;
+  return optToUrl;
 }
 
 // Parse commandline options to generate cluvio url.
@@ -302,26 +304,50 @@ exports.edit_org_all_dashboards = function(req, res, next) {
     let user_info = jwtTokenData(req, res, next);
     let user_data = {};
     let dashboards = req.body.dashboards;
+    let commandToUrlRes = {
+      url: null,
+      error: null,
+    }
+    let err;
 
     // Array of name / cmdline pairs:
     let org = null
 
+    if (dashboards.length == 0) {
+      res.send({ error: "No dashboards found in the payload to save."});
+    }
+
     // Generate the url for all dashboards.
     for (let i = 0; i < dashboards.length; i++) {
-      dashboards[i].url = cluvioCommandToUrl(dashboards[i].cmdline);
+      if (!dashboards[i].name || dashboards[i].cmdline) {
+        err = "One or more dashboards don't have a name or commandline string. Remove those entries and try again.";
+        break;
+      }
+
+      commandToUrlRes = cluvioCommandToUrl(dashboards[i].cmdline);
+      if (commandToUrlRes.error) {
+        err = commandToUrlRes.error;
+      } else {
+        dashboards[i].url = commandToUrlRes.url;
+      }
     }
 
-    org = { dashboards };
-
-    if (user_info.is_admin != true) {
-      res.send({ error: "Error: Forbidden. Not an admin."})
+    if (err) {
+      res.send({ error: err })
     } else {
-      return updateOrg(req.params.orgId, org).then(updated => {
-        res.send({ msg: "Successfully saved organization with new url"});
-      }).catch(err => {
-        res.send(err);
-      })
+      org = { dashboards };
+
+      if (user_info.is_admin != true) {
+        res.send({ error: "Error: Forbidden. Not an admin."})
+      } else {
+        return updateOrg(req.params.orgId, org).then(updated => {
+          res.send({ msg: "Successfully saved organization with new url"});
+        }).catch(err => {
+          res.send(err);
+        })
+      }
     }
+    
 }
 
 const getOrgById = function(id) {
