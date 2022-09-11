@@ -333,17 +333,17 @@ exports.edit_org_all_dashboards = function(req, res, next) {
     }
 
     if (err) {
-      res.send({ error: err })
+      res.status(421).send({ error: err })
     } else {
       org = { dashboards };
 
       if (user_info.is_admin != true) {
-        res.send({ error: "Error: Forbidden. Not an admin."})
+        res.status(403).send({ error: "Error: Forbidden. Not an admin."})
       } else {
         return updateOrg(req.params.orgId, org).then(updated => {
           res.send({ msg: "Successfully saved organization with new url"});
         }).catch(err => {
-          res.send(err);
+          res.status(421).send(err);
         })
       }
     }
