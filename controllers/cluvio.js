@@ -320,7 +320,7 @@ exports.edit_org_all_dashboards = function(req, res, next) {
     // Generate the url for all dashboards.
     for (let i = 0; i < dashboards.length; i++) {
       if (!dashboards[i].name || !dashboards[i].cmdline) {
-        err = "One or more dashboards don't have a name or commandline string. Remove those entries and try again.";
+        err = "One or more dashboards don't have a name or commandline string. Update or remove those entries and try again.";
         break;
       }
 
