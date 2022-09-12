@@ -52,7 +52,7 @@ try {
 	}
 	hash.sharing_token = sharingToken;
 	//FIXME: Test this:
-	hash.exp = Date.now() + expiration
+	//hash.exp = Date.now() + expiration
 	hash.fixed_parameters = {};
 
 	for (let i = 0; i < filters.length; i++) {
@@ -68,7 +68,7 @@ try {
 	}
 
 	// Hash is ready, now let's encode:
-	sharing_secret = JWT.encode(hash, secret);
+	sharing_secret = JWT.encode(hash, secret, { expiresIn: '1h'});
 	url = "https://dashboards.cluvio.com/dashboards/" + dashboard + 
 	"/shared?sharingToken=" + sharing_token + "&sharingSecret=" + sharing_secret;
 
