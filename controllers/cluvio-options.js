@@ -68,7 +68,7 @@ try {
 	}
 
 	// Hash is ready, now let's encode:
-	sharing_secret = JWT.encode(hash, secret, { expiresIn: '1h'});
+	sharing_secret = JWT.encode(hash, secret, { expiresIn: '24h'});
 	url = "https://dashboards.cluvio.com/dashboards/" + dashboard + 
 	"/shared?sharingToken=" + sharing_token + "&sharingSecret=" + sharing_secret;
 
