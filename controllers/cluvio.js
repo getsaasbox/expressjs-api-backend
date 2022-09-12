@@ -57,7 +57,7 @@ const optionsToUrl = function(dashboard, sharingToken, expiration, secret, filte
   hash.sharing_token = sharingToken;
   
   // FIXME: Test this:
-  hash.exp = Number(expiration);
+  //hash.exp = Number(expiration);
   hash.fixed_parameters = {};
 
   console.log("Filters:", filters)
@@ -80,7 +80,7 @@ const optionsToUrl = function(dashboard, sharingToken, expiration, secret, filte
   }
 
   // Hash is ready, now let's sign it: (Ruby code uses jwt.encode, I expect below is equivalent)
-  sharingSecret = jwt.sign(hash, secret);
+  sharingSecret = jwt.sign(hash, secret, { expiresIn: '1h'});
   url = "https://dashboards.cluvio.com/dashboards/" + dashboard + 
   "/shared?sharingToken=" + sharingToken + "&sharingSecret=" + sharingSecret;
   console.log("url:", url);

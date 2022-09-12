@@ -6,6 +6,16 @@ var OptionParser = require('option-parser');
 var parser = new OptionParser();
 var requiredValue = null;
 
+/*
+ *
+ *
+ *
+ * THIS IS THE UNUSED COMMANDLINE TOOL HERE FOR REFERENCE.
+ *
+ * ALL CODE IS ALREADY IN cluvio.js
+ *
+ *
+ */
 parser.addOption('r', 'required', 'Specify a required option')
 	.argument('OPTION')
 	.action(function (v) {
@@ -74,7 +84,7 @@ try {
 
 	console.log("hash:", hash)
 	console.log("decoded secret:", jwt.decode(sharingSecret, secret));
-	
+
 	/* Second part of "Method 3" */
 	console.log("Times the --filter was specified:  " + parser.filter.count().toString());
 	console.log("");
