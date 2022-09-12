@@ -72,6 +72,7 @@ try {
 	url = "https://dashboards.cluvio.com/dashboards/" + dashboard + 
 	"/shared?sharingToken=" + sharing_token + "&sharingSecret=" + sharing_secret;
 
+	console.log("hash:", hash)
 	/* Second part of "Method 3" */
 	console.log("Times the --filter was specified:  " + parser.filter.count().toString());
 	console.log("");
