@@ -89,6 +89,18 @@ const optionsToUrl = function(dashboard, sharingToken, expiration, secret, filte
   return optToUrl;
 }
 
+// Middleware to enforce user has admin privileges by checking the JWT token.
+exports.hasAdmin = function(req, res, next) {
+  let user_info = jwtTokenData(req, res, next);
+  if (user_info.is_admin != true) {
+    res.status(403).send({ error: "Error: Forbidden. Not an admin."})
+  } else {
+    // add user info:
+    req.user_info = user_info;
+    next();
+  }
+}
+
 // Parse commandline options to generate cluvio url.
 const cluvioCommandToUrl = function(cmdlineOptions) {
   let dashboard, sharingToken, secret, expiration, filters;
