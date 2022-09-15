@@ -299,6 +299,40 @@ exports.edit_org = function(req, res, next) {
     }
 }
 
+/* 
+ * Refresh the url of a single dashboard. The use case is
+ * Right before it is displayed this shows the dashboard url
+ */
+exports.refreshDashboardUrl = function(req, res, next) {
+  let orgId = req.params.orgId;
+  let dashSlug = req.params.dashSlug;
+
+  return getOrgById(orgId).then(org => {
+    if (!org) {
+      res.status(404).send({ error: "No such organization found. " });
+    } else {
+      for (let i = 0; i < org.dashboards.length; i++) {
+        if (org.dashboards[i].name == dashSlug) {
+          let urlOrError = cluvioCommandToUrl(org.dashboards[i].cmdline);
+          if (urlOrError.url) {
+            org.dashboards[i].url = urlOrError.url;
+            return updateOrg(org.id, org).then(updated => {
+              // Success scenario
+              res.send({ url: org.dashboards[i].url });
+            }).catch(err => {
+              res.status(500).send({ error: "Dashboard found and URL refreshed, but failed updating the organization. Please try again.\n"});
+            });
+          } else {
+            console.log("Error:", urlOrError.error);
+            res.status(500).send({ error: "Dashboard found, but error refreshing the url for dashboard: " + urlOrError.error })
+            break;
+          }
+        }
+      }
+      res.status(404).send({ error: "No such dashboard found. "});
+    }
+  });
+}
 
 exports.edit_org_all_dashboards = function(req, res, next) {
     let user_info = jwtTokenData(req, res, next);
