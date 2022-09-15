@@ -307,6 +307,7 @@ exports.refreshDashboardUrl = function(req, res, next) {
   let orgId = req.params.orgId;
   let dashSlug = req.params.dashSlug;
 
+  console.log("Refresh url called\n")
   return getOrgById(orgId).then(org => {
     if (!org) {
       res.status(404).send({ error: "No such organization found. " });
