@@ -316,8 +316,8 @@ exports.edit_org = function(req, res, next) {
  * Right before it is displayed this shows the dashboard url
  */
 exports.refreshDashboardUrl = function(req, res, next) {
-  let orgId = req.params.orgId;
-  let dashSlug = req.params.dashSlug;
+  let orgId = req.body.orgId;
+  let dashSlug = req.body.dashname;
 
   console.log("Refresh url called\n")
   return getOrgById(orgId).then(org => {
