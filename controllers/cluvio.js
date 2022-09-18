@@ -103,8 +103,9 @@ exports.hasAdmin = function(req, res, next) {
 
 // Parse commandline options to generate cluvio url.
 const cluvioCommandToUrl = function(cmdlineOptions) {
-  let dashboard, sharingToken, secret, expiration, filters;
-
+  let dashboard, sharingToken, secret, expiration;
+  let filters = []; // Always an array due to possibility of multiple instances.
+  let occurences;
   let url;
 
   let filter_name, filter_values;
@@ -130,7 +131,20 @@ const cluvioCommandToUrl = function(cmdlineOptions) {
   sharingToken = parser.token.value();
   expiration = parser.expiration.value();
   secret = parser.secret.value();
+
+  // Special filters handling:
+  occurences = parser.filter.count();
   filters = parser.getopt().filter;
+  if (occurences >= 2) {
+    // Hack to get array of filters with function meant for another purpose:
+    filters = parser.filter.getopt();
+  } else if (occurences == 1) {
+    // Put the single occurence as a value and into an array:
+    filters = [parser.filter.value()];
+  } else {
+    filters = []; // Empty array.
+  }
+
   console.log("dashboard:", dashboard);
   console.log("sharingToken:", sharingToken);
   console.log("expiration:", expiration);
