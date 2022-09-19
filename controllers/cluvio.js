@@ -101,6 +101,15 @@ exports.hasAdmin = function(req, res, next) {
   }
 }
 
+// Takes elements inside double quotes as a single arg, stripping the double quotes,
+// for example: -f "Competitor 1:Goody,Al Marai" => ['-f','Competitor 1:Goody,Al Marai']
+const parseArgsToArray = function(str) {
+    var re = /(?:")([^"]+)(?:")|([^\s"]+)(?=\s+|$)/g;
+    var res=[], arr=null;
+    while (arr = re.exec(str)) { res.push(arr[1] ? arr[1] : arr[0]); }
+    return res;
+}
+
 // Parse commandline options to generate cluvio url.
 const cluvioCommandToUrl = function(cmdlineOptions) {
   let dashboard, sharingToken, secret, expiration;
@@ -125,7 +134,9 @@ const cluvioCommandToUrl = function(cmdlineOptions) {
 
   //var unparsed = parser.parse();
 
-  let args = cmdlineOptions.split(" ");
+  // Instead of a string split by space, we consider anything inside double quotes a single arg
+  let args = parseArgsToArray(cmdlineOptions);
+
   var unparsed = parser.parse(args);
   dashboard = parser.dashboard.value();
   sharingToken = parser.token.value();
