@@ -190,6 +190,7 @@ const createUsersOrg = function(req, res, next, user_info) {
 const createNewUserDocReturnExisting = async function(req, res, next, user_info) {
   let is_admin = false;
   let user_data = {};
+
   return db.collection('daco-users').doc(user_info.id).get().then(user => {
     if (!user.exists) {
       return createUsersOrg(req, res, next, user_info).then(created => {
@@ -207,7 +208,24 @@ const createNewUserDocReturnExisting = async function(req, res, next, user_info)
         });
       });
     } else {
-      return db.collection('daco-users').doc(user_info.id).get();
+      // User exists, but update if any fields have changed (e.g. admin status)
+      return db.collection('daco-users').doc(user_info.id).get().then(user=> {
+        if (user.is_admin != user_info.is_admin) {
+          // Sync user status in database:
+          return db.collection('daco-users').doc(user_info.id).set({
+            email: user_info.email,
+            is_admin: is_admin,
+          }).then(userRef => {
+            // Return updated user
+            return db.collection('daco-users').doc(user_info.id).get();
+          }).catch(err => {
+            return { error: "Failed to update user in Firestore.\n" + err }
+          });
+        } else {
+          // no changes, return user as is:
+          return user;
+        }
+      });
     }
   });
 }
