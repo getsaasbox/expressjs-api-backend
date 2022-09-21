@@ -214,7 +214,7 @@ const createNewUserDocReturnExisting = async function(req, res, next, user_info)
           // Sync user status in database:
           return db.collection('daco-users').doc(user_info.id).set({
             email: user_info.email,
-            is_admin: is_admin,
+            is_admin: user_info.is_admin,
           }).then(userRef => {
             // Return updated user
             return db.collection('daco-users').doc(user_info.id).get();
