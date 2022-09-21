@@ -210,7 +210,7 @@ const createNewUserDocReturnExisting = async function(req, res, next, user_info)
     } else {
       // User exists, but update if any fields have changed (e.g. admin status)
       return db.collection('daco-users').doc(user_info.id).get().then(user=> {
-        if (user.is_admin != user_info.is_admin) {
+        if (user.data().is_admin != user_info.is_admin) {
           // Sync user status in database:
           return db.collection('daco-users').doc(user_info.id).set({
             email: user_info.email,
