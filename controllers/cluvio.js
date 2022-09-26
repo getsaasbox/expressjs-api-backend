@@ -118,6 +118,7 @@ const cluvioCommandToUrl = function(cmdlineOptions) {
   let url;
 
   let filter_name, filter_values;
+  let filter_obj;
   //let args = ["--filter", "5"];
 
   // Create new parser every time.
@@ -148,7 +149,8 @@ const cluvioCommandToUrl = function(cmdlineOptions) {
   filters = parser.getopt().filter;
   if (occurences >= 2) {
     // Hack to get array of filters with function meant for another purpose:
-    filters = parser.filter.getopt();
+    filter_obj = parser.filter.getopt();
+    filters = filter_obj.filter; // Getopt() returns an object, we need the filter key.
   } else if (occurences == 1) {
     // Put the single occurence as a value and into an array:
     filters = [parser.filter.value()];
