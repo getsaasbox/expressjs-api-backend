@@ -106,23 +106,23 @@ exports.hasAdmin = function(req, res, next) {
 // Can be optimized to take the keys as an input as well (['f','filter'])
 const filterArgsToArray = function(filter_obj) {
   let filters = []
-  //console.log("filter_obj:", filter_obj)
+  console.log("filter_obj:", filter_obj)
   if (filter_obj.f) {
     if (Array.isArray(filter_obj.f)) {
       filters = filters.concat(filter_obj.f);
-      //console.log("concat f as an array:", filters)
+      console.log("concat f as an array:", filters)
     } else {
       filters = filters.concat([filter_obj.f])
-      //console.log("concat f as a value:", filters)
+      console.log("concat f as a value:", filters)
     }
   }
   if (filter_obj.filter) {
     if (Array.isArray(filter_obj.filter)) {
       filters = filters.concat(filter_obj.filter);
-      //console.log("concat filter as an array:", filters)
+      console.log("concat filter as an array:", filters)
     } else {
       filters = filters.concat([filter_obj.filter])
-      //console.log("concat filter as a value:", filters)
+      console.log("concat filter as a value:", filters)
     }
   }
   return filters;
@@ -173,7 +173,6 @@ const cluvioCommandToUrl = function(cmdlineOptions) {
 
   // Special filters handling:
   occurences = parser.filter.count();
-  filters = parser.getopt().filter;
   if (occurences >= 2) {
     filters = filterArgsToArray(parser.filter.getopt());
   } else if (occurences == 1) {
