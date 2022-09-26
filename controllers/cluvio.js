@@ -100,6 +100,33 @@ exports.hasAdmin = function(req, res, next) {
     next();
   }
 }
+// Converts arguments object with f and filter keys into single array
+// It handles the case where 1 occurance is a direct value versus 
+// a multiple occurence is an array in the object.
+// Can be optimized to take the keys as an input as well (['f','filter'])
+const filterArgsToArray = function(filter_obj) {
+  let filters = []
+  //console.log("filter_obj:", filter_obj)
+  if (filter_obj.f) {
+    if (Array.isArray(filter_obj.f)) {
+      filters = filters.concat(filter_obj.f);
+      //console.log("concat f as an array:", filters)
+    } else {
+      filters = filters.concat([filter_obj.f])
+      //console.log("concat f as a value:", filters)
+    }
+  }
+  if (filter_obj.filter) {
+    if (Array.isArray(filter_obj.filter)) {
+      filters = filters.concat(filter_obj.filter);
+      //console.log("concat filter as an array:", filters)
+    } else {
+      filters = filters.concat([filter_obj.filter])
+      //console.log("concat filter as a value:", filters)
+    }
+  }
+  return filters;
+}
 
 // Takes elements inside double quotes as a single arg, stripping the double quotes,
 // for example: -f "Competitor 1:Goody,Al Marai" => ['-f','Competitor 1:Goody,Al Marai']
@@ -118,7 +145,7 @@ const cluvioCommandToUrl = function(cmdlineOptions) {
   let url;
 
   let filter_name, filter_values;
-  let filter_obj;
+
   //let args = ["--filter", "5"];
 
   // Create new parser every time.
@@ -148,11 +175,10 @@ const cluvioCommandToUrl = function(cmdlineOptions) {
   occurences = parser.filter.count();
   filters = parser.getopt().filter;
   if (occurences >= 2) {
-    // Hack to get array of filters with function meant for another purpose:
-    filter_obj = parser.filter.getopt();
-    filters = filter_obj.filter; // Getopt() returns an object, we need the filter key.
+    filters = filterArgsToArray(parser.filter.getopt());
   } else if (occurences == 1) {
     // Put the single occurence as a value and into an array:
+    // FIXME: Even these are redundant, just use filterArgsToArray for everything
     filters = [parser.filter.value()];
   } else {
     filters = []; // Empty array.
