@@ -165,6 +165,7 @@ const cluvioCommandToUrl = function(cmdlineOptions) {
   // Instead of a string split by space, we consider anything inside double quotes a single arg
   let args = parseArgsToArray(cmdlineOptions);
 
+  console.log("Args:", args);
   var unparsed = parser.parse(args);
   dashboard = parser.dashboard.value();
   sharingToken = parser.token.value();
@@ -173,6 +174,7 @@ const cluvioCommandToUrl = function(cmdlineOptions) {
 
   // Special filters handling:
   occurences = parser.filter.count();
+  console.log("Occurences:", occurences)
   if (occurences >= 2) {
     filters = filterArgsToArray(parser.filter.getopt());
   } else if (occurences == 1) {
