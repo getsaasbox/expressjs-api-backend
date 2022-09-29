@@ -430,7 +430,7 @@ exports.generateDrillThroughUrl = function(req, res, next) {
 
     // Find commandline for parent dashboard
     for (let i = 0; i < org.dashboards.length; i++) {
-        if (org.dashboards[i].name == dashSlug) {
+        if (org.dashboards[i].name == dashname) {
           cmdline = org.dashboards[i].cmdline;
           break;
         }
