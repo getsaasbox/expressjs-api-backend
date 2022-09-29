@@ -46,5 +46,6 @@ router.post("/daco-create-get-user", cluvio.create_get_user_info);
 router.post("/app/orgs/:orgId/save", cluvio.edit_org);
 router.post("/app/orgs/:orgId/save-all", cluvio.edit_org_all_dashboards);
 router.post("/app/orgs/:orgId/refreshUrl", cluvio.refreshDashboardUrl)
+router.post("/app/orgs/:orgId/drillThroughUrl", cluvio.generateDrillThroughUrl)
 
 module.exports = router;

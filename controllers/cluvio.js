@@ -383,6 +383,73 @@ exports.edit_org = function(req, res, next) {
     }
 }
 
+// Parses a given commandline and returns its parameters.
+// skips the filters as the user of this call already has them.
+const cmdlineToParams = function(cmdlineOptions) {
+  let dashboard, sharingToken, secret, expiration;
+
+  let parser = new OptionParser();
+
+  parser.addOption('f', 'filter', null, 'filter').argument('short')
+  parser.addOption('d', 'dashboard', null, 'dashboard').argument('short');
+  parser.addOption('e', 'expiration', null, 'expiration').argument('short');
+  parser.addOption('t', 'token', null, 'token').argument('short');
+  parser.addOption('s', 'secret', null, 'secret').argument('short');
+
+  // Instead of a string split by space, we consider anything inside double quotes a single arg
+  let args = parseArgsToArray(cmdlineOptions);
+
+  console.log("Args:", args);
+
+  var unparsed = parser.parse(args);
+  dashboard = parser.dashboard.value();
+  sharingToken = parser.token.value();
+  expiration = parser.expiration.value();
+  secret = parser.secret.value();
+
+  console.log("dashboard:", dashboard);
+  console.log("sharingToken:", sharingToken);
+  console.log("expiration:", expiration);
+  console.log("secret:", secret);
+
+  return { dashboard, sharingToken, expiration, secret };
+}
+
+// This is a specialized call - for a given dashboard it generates a drill through url for another dashboard.
+// The drill through dashboard url uses some parameters (such as the secret and sharing token) from the original
+// dashboard. It also doesn't need to generate a filter list, it is already provided as input
+// (from cluvio's cross-iframe message to parent)
+exports.generateDrillThroughUrl = function(req, res, next) {
+    let orgId = req.params.orgId;
+    let dashname = req.body.dashname;
+    let filters = req.body.filters;
+    let drillThroughDash = req.body.drillthrough;
+    let params = {};
+    let cmdline = null;
+    let drillThroughUrl;
+
+    // Find commandline for parent dashboard
+    for (let i = 0; i < org.dashboards.length; i++) {
+        if (org.dashboards[i].name == dashSlug) {
+          cmdline = org.dashboards[i].cmdline;
+          break;
+        }
+    }
+    
+    // Extract the cmdline parameters first for parent
+    if (cmdline) {
+      params = cmdlineToParams(cmdline);
+      params.filters = req.body.filters; // Already comes from drillThrough event msg of cluvio
+
+      // Now convert to url, however using filters and dashboard name for drill-through, but using the
+      // expiration / secret / sharingToken from the original dashboard
+       drillThroughUrl = optionsToUrl(drillThroughDash, params.sharingToken, params.expiration, params.secret, params.filters);
+       res.status(200).send({ url: drillThroughUrl });
+    } else {
+      res.status(500).send({ error: "Unexpectedly, no commandline string found for the parent dashboard.\n"})
+    }
+}
+
 /* 
  * Refresh the url of a single dashboard. The use case is
  * Right before it is displayed this shows the dashboard url
