@@ -161,7 +161,7 @@ const cluvioCommandToUrl = function(cmdlineOptions) {
   parser.addOption('e', 'expiration', null, 'expiration').argument('short');
   parser.addOption('t', 'token', null, 'token').argument('short');
   parser.addOption('s', 'secret', null, 'secret').argument('short');
-  parser.addOption('w', 'enableDrillEvents', null, 'enableDrillEvents').argument('short');
+  parser.addOption('w', 'enableDrillEvents', null, 'enableDrillEvents');
 
   let hash = {};
   let sharing_secret;
