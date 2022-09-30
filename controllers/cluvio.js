@@ -41,7 +41,7 @@ let OptionParser = require('option-parser');
 
 
 // Takes parsed options, generates url with JWT signed/encrypted sharingToken
-const optionsToUrl = function(dashboard, sharingToken, expiration, secret, filters) {
+const optionsToUrl = function(dashboard, sharingToken, expiration, secret, filters, enableDrillEvents) {
   let hash = {};
   let sharingSecret;
   let url = "";
@@ -83,6 +83,11 @@ const optionsToUrl = function(dashboard, sharingToken, expiration, secret, filte
   sharingSecret = jwt.sign(hash, secret, { expiresIn: '1h'});
   url = "https://dashboards.cluvio.com/dashboards/" + dashboard + 
   "/shared?sharingToken=" + sharingToken + "&sharingSecret=" + sharingSecret;
+
+  if (enableDrillEvents) {
+    url = url + "&enableDrillEvents";
+  }
+  
   console.log("url:", url);
   optToUrl.url = url;
   console.log("decoded secret:", jwt.decode(sharingSecret, secret));
@@ -139,7 +144,7 @@ const parseArgsToArray = function(str) {
 
 // Parse commandline options to generate cluvio url.
 const cluvioCommandToUrl = function(cmdlineOptions) {
-  let dashboard, sharingToken, secret, expiration;
+  let dashboard, sharingToken, secret, expiration, enableDrillEvents;
   let filters = []; // Always an array due to possibility of multiple instances.
   let occurences;
   let url;
@@ -156,6 +161,7 @@ const cluvioCommandToUrl = function(cmdlineOptions) {
   parser.addOption('e', 'expiration', null, 'expiration').argument('short');
   parser.addOption('t', 'token', null, 'token').argument('short');
   parser.addOption('s', 'secret', null, 'secret').argument('short');
+  parser.addOption('w', 'enableDrillEvents', null, 'enableDrillEvents').argument('short');
 
   let hash = {};
   let sharing_secret;
@@ -171,6 +177,9 @@ const cluvioCommandToUrl = function(cmdlineOptions) {
   sharingToken = parser.token.value();
   expiration = parser.expiration.value();
   secret = parser.secret.value();
+  enableDrillEvents = parser.enableDrillEvents.value();
+
+  enableDrillEvents = enableDrillEvents ? true : false;
 
   // Special filters handling:
   occurences = parser.filter.count();
@@ -189,8 +198,9 @@ const cluvioCommandToUrl = function(cmdlineOptions) {
   console.log("sharingToken:", sharingToken);
   console.log("expiration:", expiration);
   console.log("secret:", secret);
+  console.log("enableDrillEvents:", filters);
   console.log("filters:", filters);
-  return optionsToUrl(dashboard, sharingToken, expiration, secret, filters);
+  return optionsToUrl(dashboard, sharingToken, expiration, secret, filters, enableDrillEvents);
 }
 
 
@@ -395,7 +405,7 @@ const cmdlineToParams = function(cmdlineOptions) {
   parser.addOption('e', 'expiration', null, 'expiration').argument('short');
   parser.addOption('t', 'token', null, 'token').argument('short');
   parser.addOption('s', 'secret', null, 'secret').argument('short');
-
+  
   // Instead of a string split by space, we consider anything inside double quotes a single arg
   let args = parseArgsToArray(cmdlineOptions);
 
@@ -443,7 +453,7 @@ exports.generateDrillThroughUrl = function(req, res, next) {
 
       // Now convert to url, however using filters and dashboard name for drill-through, but using the
       // expiration / secret / sharingToken from the original dashboard
-       drillThroughUrl = optionsToUrl(drillThroughDash, params.sharingToken, params.expiration, params.secret, params.filters);
+       drillThroughUrl = optionsToUrl(drillThroughDash, params.sharingToken, params.expiration, params.secret, params.filters, false);
        res.status(200).send({ url: drillThroughUrl });
     } else {
       res.status(500).send({ error: "Unexpectedly, no commandline string found for the parent dashboard.\n"})
