@@ -438,26 +438,31 @@ exports.generateDrillThroughUrl = function(req, res, next) {
     let cmdline = null;
     let drillThroughUrl;
 
-    // Find commandline for parent dashboard
-    for (let i = 0; i < org.dashboards.length; i++) {
-        if (org.dashboards[i].name == dashname) {
-          cmdline = org.dashboards[i].cmdline;
-          break;
+    return getOrgById(orgId).then(org => {
+      if (!org) {
+        res.status(404).send({ error: "No such organization found. " });
+      } else {
+        // Find commandline for parent dashboard
+        for (let i = 0; i < org.dashboards.length; i++) {
+            if (org.dashboards[i].name == dashname) {
+              cmdline = org.dashboards[i].cmdline;
+              break;
+            }
         }
-    }
-    
-    // Extract the cmdline parameters first for parent
-    if (cmdline) {
-      params = cmdlineToParams(cmdline);
-      params.filters = req.body.filters; // Already comes from drillThrough event msg of cluvio
+        // Extract the cmdline parameters first for parent
+        if (cmdline) {
+          params = cmdlineToParams(cmdline);
+          params.filters = req.body.filters; // Already comes from drillThrough event msg of cluvio
 
-      // Now convert to url, however using filters and dashboard name for drill-through, but using the
-      // expiration / secret / sharingToken from the original dashboard
-       drillThroughUrl = optionsToUrl(drillThroughDash, params.sharingToken, params.expiration, params.secret, params.filters, false);
-       res.status(200).send({ url: drillThroughUrl });
-    } else {
-      res.status(500).send({ error: "Unexpectedly, no commandline string found for the parent dashboard.\n"})
-    }
+          // Now convert to url, however using filters and dashboard name for drill-through, but using the
+          // expiration / secret / sharingToken from the original dashboard
+           drillThroughUrl = optionsToUrl(drillThroughDash, params.sharingToken, params.expiration, params.secret, params.filters, false);
+           res.status(200).send({ url: drillThroughUrl });
+        } else {
+          res.status(500).send({ error: "Unexpectedly, no commandline string found for the parent dashboard.\n"})
+        }
+      }
+    });
 }
 
 /* 
