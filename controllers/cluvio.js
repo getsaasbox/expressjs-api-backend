@@ -425,6 +425,28 @@ const cmdlineToParams = function(cmdlineOptions) {
   return { dashboard, sharingToken, expiration, secret };
 }
 
+
+// Transform filters here. What we get in filters in req.body.filters:
+//
+// Filters: [ { filterVariable: 'timerange', value: '1638316800~1640995199' }, { filterVariable: 'Sentiment', value: 'Positive' }]
+// 
+// What we need:
+// filters: [ 'Demo_Category:', 'Demo_SubCategory:' ]
+//
+const dtFilterParamsToFilters = function(params) {
+  let filters = [];
+
+  // Convert separated key value into a key:val format string:
+  // TODO: What happens if multiple values per key?
+  for (let i = 0; i < params.length; i++) {
+    let key = params[i].filterVariable;
+    let val = params[i].value;
+    let str = key + ":" + val;
+    filters.push(str);
+  }
+  return filters;
+}
+
 // This is a specialized call - for a given dashboard it generates a drill through url for another dashboard.
 // The drill through dashboard url uses some parameters (such as the secret and sharing token) from the original
 // dashboard. It also doesn't need to generate a filter list, it is already provided as input
@@ -432,11 +454,12 @@ const cmdlineToParams = function(cmdlineOptions) {
 exports.generateDrillThroughUrl = function(req, res, next) {
     let orgId = req.params.orgId;
     let dashname = req.body.dashname;
-    let filters = req.body.filters;
     let drillThroughDash = req.body.drillthrough;
     let params = {};
     let cmdline = null;
     let drillThroughUrl;
+
+    let filters = dtFilterParamsToFilters(req.body.filters);
 
     return getOrgById(orgId).then(org => {
       if (!org) {
