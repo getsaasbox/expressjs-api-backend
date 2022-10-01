@@ -459,8 +459,6 @@ exports.generateDrillThroughUrl = function(req, res, next) {
     let cmdline = null;
     let drillThroughUrl;
 
-    let filters = dtFilterParamsToFilters(req.body.filters);
-
     return getOrgById(orgId).then(org => {
       if (!org) {
         res.status(404).send({ error: "No such organization found. " });
@@ -475,7 +473,7 @@ exports.generateDrillThroughUrl = function(req, res, next) {
         // Extract the cmdline parameters first for parent
         if (cmdline) {
           params = cmdlineToParams(cmdline);
-          params.filters = req.body.filters; // Already comes from drillThrough event msg of cluvio
+          params.filters = dtFilterParamsToFilters(req.body.filters); // Already comes from drillThrough event msg of cluvio
 
           // Now convert to url, however using filters and dashboard name for drill-through, but using the
           // expiration / secret / sharingToken from the original dashboard
