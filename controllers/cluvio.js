@@ -474,7 +474,7 @@ exports.generateDrillThroughUrl = function(req, res, next) {
         if (cmdline) {
           params = cmdlineToParams(cmdline);
           params.filters = dtFilterParamsToFilters(req.body.filters); // Already comes from drillThrough event msg of cluvio
-
+          console.log("Filters final for dthrough:", params.filters);
           // Now convert to url, however using filters and dashboard name for drill-through, but using the
           // expiration / secret / sharingToken from the original dashboard
            drillThroughUrl = optionsToUrl(drillThroughDash, params.sharingToken, params.expiration, params.secret, params.filters, false);
