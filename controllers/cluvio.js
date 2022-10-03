@@ -453,7 +453,7 @@ const dtFilterParamsToFilters = function(params) {
 // (from cluvio's cross-iframe message to parent)
 exports.generateDrillThroughUrl = function(req, res, next) {
     let orgId = req.params.orgId;
-    let dashname = req.body.dashname;
+    let currentDash = req.body.dashname;
     let drillThroughDash = req.body.drillthrough;
     let params = {};
     let cmdline = null;
@@ -463,9 +463,9 @@ exports.generateDrillThroughUrl = function(req, res, next) {
       if (!org) {
         res.status(404).send({ error: "No such organization found. " });
       } else {
-        // Find commandline for parent dashboard
         for (let i = 0; i < org.dashboards.length; i++) {
-            if (org.dashboards[i].name == dashname) {
+            // Find commandline for drillthrough dashboard to detect secret and sharing token:
+            if (org.dashboards[i].cmdline.includes(drillThroughDash)) {
               cmdline = org.dashboards[i].cmdline;
               break;
             }
@@ -480,7 +480,7 @@ exports.generateDrillThroughUrl = function(req, res, next) {
            drillThroughUrl = optionsToUrl(drillThroughDash, params.sharingToken, params.expiration, params.secret, params.filters, false);
            res.status(200).send({ url: drillThroughUrl });
         } else {
-          res.status(500).send({ error: "Unexpectedly, no commandline string found for the parent dashboard.\n"})
+          res.status(500).send({ error: "Unexpectedly, no commandline string found for the drillthrough dashboard.\n"})
         }
       }
     });
