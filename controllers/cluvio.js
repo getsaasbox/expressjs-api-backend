@@ -465,7 +465,9 @@ exports.generateDrillThroughUrl = function(req, res, next) {
       } else {
         for (let i = 0; i < org.dashboards.length; i++) {
             // Find commandline for drillthrough dashboard to detect secret and sharing token:
+            console.log("checking if " + org.dashboards[i].cmdline + " includes " + drillThroughDash);
             if (org.dashboards[i].cmdline.includes(drillThroughDash)) {
+              console.log("Yes.\n");
               cmdline = org.dashboards[i].cmdline;
               break;
             }
