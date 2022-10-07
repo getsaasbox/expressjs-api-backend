@@ -111,23 +111,23 @@ exports.hasAdmin = function(req, res, next) {
 // Can be optimized to take the keys as an input as well (['f','filter'])
 const filterArgsToArray = function(filter_obj) {
   let filters = []
-  console.log("filter_obj:", filter_obj)
+  //console.log("filter_obj:", filter_obj)
   if (filter_obj.f) {
     if (Array.isArray(filter_obj.f)) {
       filters = filters.concat(filter_obj.f);
-      console.log("concat f as an array:", filters)
+      //console.log("concat f as an array:", filters)
     } else {
       filters = filters.concat([filter_obj.f])
-      console.log("concat f as a value:", filters)
+      //console.log("concat f as a value:", filters)
     }
   }
   if (filter_obj.filter) {
     if (Array.isArray(filter_obj.filter)) {
       filters = filters.concat(filter_obj.filter);
-      console.log("concat filter as an array:", filters)
+      //console.log("concat filter as an array:", filters)
     } else {
       filters = filters.concat([filter_obj.filter])
-      console.log("concat filter as a value:", filters)
+      //console.log("concat filter as a value:", filters)
     }
   }
   return filters;
@@ -142,8 +142,55 @@ const parseArgsToArray = function(str) {
     return res;
 }
 
+
+// Parses a given commandline and returns its parameters.
+const cmdlineToParams = function(cmdlineOptions) {
+  let dashboard, sharingToken, secret, expiration;
+  let filters = [];
+  let occurences;
+  let parser = new OptionParser();
+
+  parser.addOption('f', 'filter', null, 'filter').argument('short')
+  parser.addOption('d', 'dashboard', null, 'dashboard').argument('short');
+  parser.addOption('e', 'expiration', null, 'expiration').argument('short');
+  parser.addOption('t', 'token', null, 'token').argument('short');
+  parser.addOption('s', 'secret', null, 'secret').argument('short');
+  
+  // Instead of a string split by space, we consider anything inside double quotes a single arg
+  let args = parseArgsToArray(cmdlineOptions);
+
+  console.log("Args:", args);
+
+  var unparsed = parser.parse(args);
+  dashboard = parser.dashboard.value();
+  sharingToken = parser.token.value();
+  expiration = parser.expiration.value();
+  secret = parser.secret.value();
+
+  console.log("dashboard:", dashboard);
+  console.log("sharingToken:", sharingToken);
+  console.log("expiration:", expiration);
+  console.log("secret:", secret);
+  // Special filters handling:
+  occurences = parser.filter.count();
+  
+  console.log("Occurences:", occurences)
+  if (occurences >= 2) {
+    filters = filterArgsToArray(parser.filter.getopt());
+  } else if (occurences == 1) {
+    // Put the single occurence as a value and into an array:
+    // FIXME: Even these are redundant, just use filterArgsToArray for everything
+    filters = [parser.filter.value()];
+  } else {
+    filters = []; // Empty array.
+  }
+
+  return { dashboard, sharingToken, expiration, secret, filters };
+}
+
+
 // Parse commandline options to generate cluvio url.
-const cluvioCommandToUrl = function(cmdlineOptions) {
+const cluvioCommandToUrl = function(cmdlineOptions, drillThroughFilters) {
   let dashboard, sharingToken, secret, expiration, enableDrillEvents;
   let filters = []; // Always an array due to possibility of multiple instances.
   let occurences;
@@ -200,6 +247,12 @@ const cluvioCommandToUrl = function(cmdlineOptions) {
   console.log("secret:", secret);
   console.log("enableDrillEvents:", filters);
   console.log("filters:", filters);
+  
+  // Handle case of drillthrough dashboards with extra filters passed during DT.
+  if (drillThroughFilters && drillThroughFilters.length > 0) {
+    filters.push(drillThroughFilters);
+  }
+  
   return optionsToUrl(dashboard, sharingToken, expiration, secret, filters, enableDrillEvents);
 }
 
@@ -393,38 +446,6 @@ exports.edit_org = function(req, res, next) {
     }
 }
 
-// Parses a given commandline and returns its parameters.
-// skips the filters as the user of this call already has them.
-const cmdlineToParams = function(cmdlineOptions) {
-  let dashboard, sharingToken, secret, expiration;
-
-  let parser = new OptionParser();
-
-  parser.addOption('f', 'filter', null, 'filter').argument('short')
-  parser.addOption('d', 'dashboard', null, 'dashboard').argument('short');
-  parser.addOption('e', 'expiration', null, 'expiration').argument('short');
-  parser.addOption('t', 'token', null, 'token').argument('short');
-  parser.addOption('s', 'secret', null, 'secret').argument('short');
-  
-  // Instead of a string split by space, we consider anything inside double quotes a single arg
-  let args = parseArgsToArray(cmdlineOptions);
-
-  console.log("Args:", args);
-
-  var unparsed = parser.parse(args);
-  dashboard = parser.dashboard.value();
-  sharingToken = parser.token.value();
-  expiration = parser.expiration.value();
-  secret = parser.secret.value();
-
-  console.log("dashboard:", dashboard);
-  console.log("sharingToken:", sharingToken);
-  console.log("expiration:", expiration);
-  console.log("secret:", secret);
-
-  return { dashboard, sharingToken, expiration, secret };
-}
-
 
 // Transform filters here. What we get in filters in req.body.filters:
 //
@@ -458,6 +479,7 @@ exports.generateDrillThroughUrl = function(req, res, next) {
     let params = {};
     let cmdline = null;
     let drillThroughUrl;
+    let dtFilters = [];
 
     return getOrgById(orgId).then(org => {
       if (!org) {
@@ -465,21 +487,22 @@ exports.generateDrillThroughUrl = function(req, res, next) {
       } else {
         for (let i = 0; i < org.dashboards.length; i++) {
             // Find commandline for drillthrough dashboard to detect secret and sharing token:
-            console.log("checking if " + org.dashboards[i].cmdline + " includes " + drillThroughDash);
+            //console.log("checking if " + org.dashboards[i].cmdline + " includes " + drillThroughDash);
             if (org.dashboards[i].cmdline.includes(drillThroughDash)) {
-              console.log("Yes.\n");
+              //console.log("Yes.\n");
               cmdline = org.dashboards[i].cmdline;
               break;
             }
         }
         // Extract the cmdline parameters first for parent
         if (cmdline) {
-          params = cmdlineToParams(cmdline);
-          params.filters = dtFilterParamsToFilters(req.body.filters); // Already comes from drillThrough event msg of cluvio
-          console.log("Filters final for dthrough:", params.filters);
+          //params = cmdlineToParams(cmdline);
+          dtFilters = dtFilterParamsToFilters(req.body.filters); // Already comes from drillThrough event msg of cluvio
+          console.log("Initial filters for DThrough:", dtFilters);
           // Now convert to url, however using filters and dashboard name for drill-through, but using the
           // expiration / secret / sharingToken from the original dashboard
-           drillThroughUrl = optionsToUrl(drillThroughDash, params.sharingToken, params.expiration, params.secret, params.filters, false);
+           drillThroughUrl = cluvioCommandToUrl(cmdline, dtFilters);
+           console.log("Drillthrough url:", drillThroughUrl);
            res.status(200).send({ url: drillThroughUrl });
         } else {
           res.status(500).send({ error: "Unexpectedly, no commandline string found for the drillthrough dashboard.\n"})
