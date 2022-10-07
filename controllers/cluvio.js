@@ -251,6 +251,7 @@ const cluvioCommandToUrl = function(cmdlineOptions, drillThroughFilters) {
   // Handle case of drillthrough dashboards with extra filters passed during DT.
   if (drillThroughFilters && drillThroughFilters.length > 0) {
     filters = filters.concat(drillThroughFilters);
+    console.log("filters after merge:", filters)
   }
   
   return optionsToUrl(dashboard, sharingToken, expiration, secret, filters, enableDrillEvents);
@@ -402,7 +403,7 @@ const getOrgByDomain = function(domain) {
     // If doc exists, get its id:
     if (getOneDocId(orgQuerySnapshot).length > 0) {
       org.id = getOneDocId(orgQuerySnapshot)[0];
-      console.log("adding organization id to org:", org)
+      //console.log("adding organization id to org:", org)
 
       return org;
     } else {
@@ -603,7 +604,7 @@ const getOrgById = function(id) {
   return orgsRef.doc(id).get().then(orgData => {
     org = orgData.data();
     org.id = id;
-    console.log("Organization we got by id:", org);
+    // console.log("Organization we got by id:", org);
     return org;
   });
 }
