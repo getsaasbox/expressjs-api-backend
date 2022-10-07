@@ -526,7 +526,7 @@ exports.refreshDashboardUrl = function(req, res, next) {
     } else {
       for (let i = 0; i < org.dashboards.length; i++) {
         if (org.dashboards[i].name == dashSlug) {
-          let urlOrError = cluvioCommandToUrl(org.dashboards[i].cmdline);
+          let urlOrError = cluvioCommandToUrl(org.dashboards[i].cmdline, []);
           if (urlOrError.url) {
             org.dashboards[i].url = urlOrError.url;
             return updateOrg(org.id, org).then(updated => {
@@ -571,7 +571,7 @@ exports.edit_org_all_dashboards = function(req, res, next) {
         break;
       }
 
-      commandToUrlRes = cluvioCommandToUrl(dashboards[i].cmdline);
+      commandToUrlRes = cluvioCommandToUrl(dashboards[i].cmdline, []);
       if (commandToUrlRes.error) {
         err = commandToUrlRes.error;
       } else {
