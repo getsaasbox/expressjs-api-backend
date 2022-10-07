@@ -250,7 +250,7 @@ const cluvioCommandToUrl = function(cmdlineOptions, drillThroughFilters) {
   
   // Handle case of drillthrough dashboards with extra filters passed during DT.
   if (drillThroughFilters && drillThroughFilters.length > 0) {
-    filters.push(drillThroughFilters);
+    filters = filters.concat(drillThroughFilters);
   }
   
   return optionsToUrl(dashboard, sharingToken, expiration, secret, filters, enableDrillEvents);
