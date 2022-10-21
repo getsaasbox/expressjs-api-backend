@@ -395,7 +395,9 @@ exports.create_get_user_info = function(req, res, next) {
           }
       });
     }
+  })
 }
+
 
 // Create new org, with / without dashboard params
 const createOrg = function(org) {
