@@ -279,6 +279,24 @@ const createUsersOrg = function(req, res, next, user_info) {
   })
 }
 
+// Fetch user's org or null if it doesn't exist.
+const fetchUsersOrg = function(req, res, next, user_info) {
+  // Get user email domain
+  let domain = getUserEmailDomain(user_info.email);
+
+  // Query all organizations by domain
+  return getOrgByDomain(domain).then(org => {
+    //console.log("Org retrieved:", org);
+    // If no organization with this domain
+    if (!org) {
+      return null;
+
+    } else {
+      return org;
+    }
+  })
+}
+
 // Creates new user if it doesnt exist, returns user data.
 const createNewUserDocReturnExisting = async function(req, res, next, user_info) {
   let is_admin = false;
@@ -286,7 +304,10 @@ const createNewUserDocReturnExisting = async function(req, res, next, user_info)
 
   return db.collection('daco-users').doc(user_info.id).get().then(user => {
     if (!user.exists) {
-      return createUsersOrg(req, res, next, user_info).then(created => {
+      return createUsersOrg(req, res, next, user_info).then(org => {
+        if (!org) {
+          return { error: "Organization does not exist. Please contact your administrator."}
+        }
         // Create the user as admin if that is true.
         if (user_info.is_admin == true) {
           is_admin = true;
@@ -334,37 +355,46 @@ exports.create_get_user_info = function(req, res, next) {
   let orgs;
   let orgsRef;
 
-  //console.log("JWT user info: ", user_info);
-  return createNewUserDocReturnExisting(req, res, next, user_info).then(user => {
-      //console.log("User data:", user.data())
-
-      // Common to both admin and user:
-      user_data.is_admin = user.data().is_admin;
-      user_data.email = user.data().email;
-      // Also fetch per-client-domain specific dashboard data for admin user
-      if (user.data().is_admin == true) {
-        orgsRef = db.collection("orgs");
-        return orgsRef.get().then(orgsQuerySnapshot => {
-          orgs = orgsQuerySnapshot.docs.map(doc => {
-            let data = doc.data();
-            data.id = doc.id;
-            return data;
-          });
-          // Admin gets an array of orgs data
-          res.send({ user_data, orgs});
-        })
-      } else {
-          // FIXME: Get the current org from orgs:
-          return getOrgByDomain(getUserEmailDomain(user_data.email)).then(org => {
-            if (!org) {
-              res.send({error: "Internal server error. Org had to exist even if empty, but could not be found\n"});
+  // FIXME: Get the current org from orgs:
+  return getOrgByDomain(getUserEmailDomain(user_data.email)).then(org => {
+    if (!org) {
+      res.send({ error: "Organization does not exist. Please contact your administrator."});
+    } else {
+      //console.log("JWT user info: ", user_info);
+      return createNewUserDocReturnExisting(req, res, next, user_info).then(user => {
+          if (user.error) {
+            res.send(user.error)
+          } else {
+            //console.log("User data:", user.data())
+            // Common to both admin and user:
+            user_data.is_admin = user.data().is_admin;
+            user_data.email = user.data().email;
+            // Also fetch per-client-domain specific dashboard data for admin user
+            if (user.data().is_admin == true) {
+              orgsRef = db.collection("orgs");
+              return orgsRef.get().then(orgsQuerySnapshot => {
+                orgs = orgsQuerySnapshot.docs.map(doc => {
+                  let data = doc.data();
+                  data.id = doc.id;
+                  return data;
+                });
+                // Admin gets an array of orgs data
+                res.send({ user_data, orgs });
+              })
             } else {
-              // Regular user only gets his/her own org data.
-              res.send({ user_data, org });
-            }
-          })
-      }
-  });
+              // FIXME: Get the current org from orgs:
+              return getOrgByDomain(getUserEmailDomain(user_data.email)).then(org => {
+                if (!org) {
+                  res.send({error: "Organization does not exist. Please contact your administrator.\n"});
+                } else {
+                  // Regular user only gets his/her own org data.
+                  res.send({ user_data, org });
+                }
+              })
+            }  
+          }
+      });
+    }
 }
 
 // Create new org, with / without dashboard params
