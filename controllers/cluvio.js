@@ -356,7 +356,7 @@ exports.create_get_user_info = function(req, res, next) {
   let orgsRef;
 
   // FIXME: Get the current org from orgs:
-  return getOrgByDomain(getUserEmailDomain(user_data.email)).then(org => {
+  return getOrgByDomain(getUserEmailDomain(user_info.email)).then(org => {
     if (!org) {
       res.send({ error: "Organization does not exist. Please contact your administrator."});
     } else {
