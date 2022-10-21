@@ -456,10 +456,15 @@ const updateOrg = function(id, org) {
 }
 
 exports.create_org = function(req, res, next) {
-    let user_info = jwtTokenData(req, res, next);
-    let user_data = {};
-    let domain = req.body.name;
+  let user_info = jwtTokenData(req, res, next);
+  let user_data = {};
+  let domain = req.body.name;
 
+  if (!domain) {
+    res.send({ error: "Organization name cannot be empty."});
+  } else if (domain.includes("@")) {
+    res.send({ error: "Organization domain cannot include the @ character."})
+  } else {
     return getOrgByDomain(domain).then(org => {
       if (org) {
         res.send({ error: "Organization already exists." });
@@ -472,6 +477,7 @@ exports.create_org = function(req, res, next) {
         });
       }
     })
+  }   
 }
 
 exports.edit_org = function(req, res, next) {
