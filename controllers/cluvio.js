@@ -356,7 +356,7 @@ exports.create_get_user_info = function(req, res, next) {
   let orgsRef;
 
   console.log("User_info:", user_info);
-  
+
   // FIXME: Get the current org from orgs:
   return getOrgByDomain(getUserEmailDomain(user_info.email)).then(org => {
     if (!org) {
@@ -385,7 +385,7 @@ exports.create_get_user_info = function(req, res, next) {
               })
             } else {
               // FIXME: Get the current org from orgs:
-              return getOrgByDomain(getUserEmailDomain(user_data.email)).then(org => {
+              return getOrgByDomain(getUserEmailDomain(user_info.email)).then(org => {
                 if (!org) {
                   res.send({error: "Organization does not exist. Please contact your administrator.\n"});
                 } else {
@@ -453,6 +453,25 @@ const updateOrg = function(id, org) {
   }).catch(err => {
     return new Promise((resolve, reject) => { reject({error: "Failed to update org\n"}); });
   });
+}
+
+exports.create_org = function(req, res, next) {
+    let user_info = jwtTokenData(req, res, next);
+    let user_data = {};
+    let domain = req.body.name;
+
+    return getOrgByDomain(domain).then(org => {
+      if (org) {
+        res.send({ error: "Organization already exists." });
+      } else {
+        // Create new org
+        return createOrg({ domain }).then(success => {
+          res.send({ msg: "Organization created successfully." });
+        }).catch(err => {
+          res.status(500).send({ error: "Internal error creating organization, please try again.\n"})
+        });
+      }
+    })
 }
 
 exports.edit_org = function(req, res, next) {
