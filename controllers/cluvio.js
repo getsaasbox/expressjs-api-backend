@@ -355,6 +355,8 @@ exports.create_get_user_info = function(req, res, next) {
   let orgs;
   let orgsRef;
 
+  console.log("User_info:", user_info);
+  
   // FIXME: Get the current org from orgs:
   return getOrgByDomain(getUserEmailDomain(user_info.email)).then(org => {
     if (!org) {
