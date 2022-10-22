@@ -507,7 +507,18 @@ exports.edit_org = function(req, res, next) {
 }
 
 exports.delete_org = function(req, res, next) {
-  console.log("delete_org() Hello World!")
+  let id = req.body.orgId;
+
+  if (id) {
+    return db.collection('orgs').doc(id).delete().then(deleted => {
+      console.log("Success deleting organization.")
+      res.status(200).send({ msg: "Success deleting organization: ", id });
+    }).catch(err => {
+      res.status(500).send({ error: "Internal database error deleting organization: " + err });
+    })
+  } else {
+    res.status(400).send({ error: "Invalid organization id for deletion."});
+  }
 }
 
 // Transform filters here. What we get in filters in req.body.filters:
