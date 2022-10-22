@@ -45,6 +45,7 @@ router.post("/daco-create-get-user", cluvio.create_get_user_info);
 // Edit dashboard parameters for a single org, single dashboard:
 router.post("/app/orgs/create", cluvio.create_org);
 router.post("/app/orgs/:orgId/save", cluvio.edit_org);
+router.post("/app/orgs/:orgId/delete", cluvio.delete_org);
 router.post("/app/orgs/:orgId/save-all", cluvio.edit_org_all_dashboards);
 router.post("/app/orgs/:orgId/refreshUrl", cluvio.refreshDashboardUrl)
 router.post("/app/orgs/:orgId/drillThroughUrl", cluvio.generateDrillThroughUrl)

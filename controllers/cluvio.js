@@ -506,6 +506,9 @@ exports.edit_org = function(req, res, next) {
     }
 }
 
+exports.delete_org = function(req, res, next) {
+  console.log("delete_org() Hello World!")
+}
 
 // Transform filters here. What we get in filters in req.body.filters:
 //
