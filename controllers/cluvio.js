@@ -304,7 +304,7 @@ const createNewUserDocReturnExisting = async function(req, res, next, user_info)
 
   return db.collection('daco-users').doc(user_info.id).get().then(user => {
     if (!user.exists) {
-      return createUsersOrg(req, res, next, user_info).then(org => {
+      return fetchUsersOrg(req, res, next, user_info).then(org => {
         if (!org) {
           return { error: "Organization does not exist. Please contact your administrator."}
         }
