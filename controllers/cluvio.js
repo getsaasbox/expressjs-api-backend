@@ -530,12 +530,13 @@ exports.delete_org = function(req, res, next) {
 //
 const dtFilterParamsToFilters = function(params) {
   let filters = [];
+  let filtersFirst = params.filters; // First set of filters passed
 
   // Convert separated key value into a key:val format string:
   // TODO: What happens if multiple values per key?
-  for (let i = 0; i < params.length; i++) {
-    let key = params[i].filterVariable;
-    let val = params[i].value;
+  for (let i = 0; i < filtersFirst.length; i++) {
+    let key = filtersFirst[i].filterVariable;
+    let val = filtersFirst[i].value;
     let str = key + ":" + val;
     filters.push(str);
   }
@@ -571,7 +572,7 @@ exports.generateDrillThroughUrl = function(req, res, next) {
         // Extract the cmdline parameters first for parent
         if (cmdline) {
           //params = cmdlineToParams(cmdline);
-          dtFilters = dtFilterParamsToFilters(req.body.filters); // Already comes from drillThrough event msg of cluvio
+          dtFilters = dtFilterParamsToFilters(req.body.params); // Already comes from drillThrough event msg of cluvio
           console.log("Initial filters for DThrough:", dtFilters);
           // Now convert to url, however using filters and dashboard name for drill-through, but using the
           // expiration / secret / sharingToken from the original dashboard
