@@ -531,15 +531,49 @@ exports.delete_org = function(req, res, next) {
 const dtFilterParamsToFilters = function(params) {
   let filters = [];
   let filtersFirst = params.filters; // First set of filters passed
-
+  let key, val, str;
   // Convert separated key value into a key:val format string:
   // TODO: What happens if multiple values per key?
   for (let i = 0; i < filtersFirst.length; i++) {
-    let key = filtersFirst[i].filterVariable;
-    let val = filtersFirst[i].value;
-    let str = key + ":" + val;
+    key = filtersFirst[i].filterVariable;
+    val = filtersFirst[i].value;
+    str = key + ":" + val;
     filters.push(str);
   }
+
+  // Handle the 2nd set in params, this is an array:
+  let filters2nd = params.parameters.filters;
+
+/*
+ Expected format:
+ "parameters": {
+    "filters": [
+      {
+        "filter_name": "Brand",
+        "selected_values": [
+            "Puck"
+        ],
+        "column_type": "TEXT"
+      },
+*/
+  // For each filter in 2nd list:
+  for (let i = 0; i < filters2nd.length; i++) {
+    // Filter presence test
+    if (filters2nd[i].selected_values.length > 0) {
+      // Get key and value
+      val = ""; // It has to be a string
+      key = filters2nd[i].filter_name;
+      val = filters2nd[i].selected_values[0]; // First value
+
+      // If there is more, create comma separated list starting from next:
+      for (let x = 1; x < filters2nd[x].selected_values.length; x++) {
+        val += "," + filters2nd[i].selected_values[x]; // Comma separated list of values
+      }
+      str = key + ":" val;
+      filters.push(str);
+    }
+  }
+
   return filters;
 }
 
