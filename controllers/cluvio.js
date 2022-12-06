@@ -532,7 +532,7 @@ const dtFilterParamsToFilters = function(params) {
   let filters = [];
   let filtersFirst = params.filters; // First set of filters passed
   let key, val, str;
-  console.log("params:", params);
+  
   // Convert separated key value into a key:val format string:
   // TODO: What happens if multiple values per key?
   for (let i = 0; i < filtersFirst.length; i++) {
@@ -607,6 +607,8 @@ exports.generateDrillThroughUrl = function(req, res, next) {
         // Extract the cmdline parameters first for parent
         if (cmdline) {
           //params = cmdlineToParams(cmdline);
+          console.log("params:", req.body.params);
+          console.log("req.body:", req.body);
           dtFilters = dtFilterParamsToFilters(req.body.params); // Already comes from drillThrough event msg of cluvio
           console.log("Initial filters for DThrough:", dtFilters);
           // Now convert to url, however using filters and dashboard name for drill-through, but using the
