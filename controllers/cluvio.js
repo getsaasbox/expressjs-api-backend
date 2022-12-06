@@ -557,20 +557,22 @@ const dtFilterParamsToFilters = function(params) {
       },
 */
   // For each filter in 2nd list:
-  for (let i = 0; i < filters2nd.length; i++) {
-    // Filter presence test
-    if (filters2nd[i].selected_values.length > 0) {
-      // Get key and value
-      val = ""; // It has to be a string
-      key = filters2nd[i].filter_name;
-      val = filters2nd[i].selected_values[0]; // First value
+  if (filters2nd) {
+    for (let i = 0; i < filters2nd.length; i++) {
+      // Filter presence test
+      if (filters2nd[i].selected_values.length > 0) {
+        // Get key and value
+        val = ""; // It has to be a string
+        key = filters2nd[i].filter_name;
+        val = filters2nd[i].selected_values[0]; // First value
 
-      // If there is more, create comma separated list starting from next:
-      for (let x = 1; x < filters2nd[x].selected_values.length; x++) {
-        val += "," + filters2nd[i].selected_values[x]; // Comma separated list of values
+        // If there is more, create comma separated list starting from next:
+        for (let x = 1; x < filters2nd[x].selected_values.length; x++) {
+          val += "," + filters2nd[i].selected_values[x]; // Comma separated list of values
+        }
+        str = key + ":" + val;
+        filters.push(str);
       }
-      str = key + ":" + val;
-      filters.push(str);
     }
   }
 
