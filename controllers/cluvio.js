@@ -570,7 +570,7 @@ const dtFilterParamsToFilters = function(params) {
       for (let x = 1; x < filters2nd[x].selected_values.length; x++) {
         val += "," + filters2nd[i].selected_values[x]; // Comma separated list of values
       }
-      str = key + ":" val;
+      str = key + ":" + val;
       filters.push(str);
     }
   }
