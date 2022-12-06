@@ -30,7 +30,7 @@ const jwtTokenData = function(req, res, next) {
 let tldparser = require('tld-extract');
 
 const getUserEmailDomain = function(email) {
-  console.log("Email:", email)
+  //console.log("Email:", email)
   const address = email.split('@')[1];
   return address;
   //const domain = tldparser(address).domain;
@@ -60,12 +60,12 @@ const optionsToUrl = function(dashboard, sharingToken, expiration, secret, filte
   //hash.exp = Number(expiration);
   hash.fixed_parameters = {};
 
-  console.log("Filters:", filters)
+  //console.log("Filters:", filters)
   for (let i = 0; i < filters.length; i++) {
-    console.log("filters status:", filters[i])
+    //console.log("filters status:", filters[i])
     // Create a value array if not these options
     if (!filters[i].startsWith("aggregation") && !filters[i].startsWith("timerange")) {
-      console.log("Doesnt start with aggregration or timerange")
+      //console.log("Doesnt start with aggregration or timerange")
       splitkv = filters[i].split(":");
       filter_name = splitkv[0];
       filter_values = splitkv[1].split(",");
@@ -88,9 +88,9 @@ const optionsToUrl = function(dashboard, sharingToken, expiration, secret, filte
     url = url + "&enableDrillEvents";
   }
   
-  console.log("url:", url);
+  //console.log("url:", url);
   optToUrl.url = url;
-  console.log("decoded secret:", jwt.decode(sharingSecret, secret));
+  //console.log("decoded secret:", jwt.decode(sharingSecret, secret));
   return optToUrl;
 }
 
@@ -159,7 +159,7 @@ const cmdlineToParams = function(cmdlineOptions) {
   // Instead of a string split by space, we consider anything inside double quotes a single arg
   let args = parseArgsToArray(cmdlineOptions);
 
-  console.log("Args:", args);
+  //console.log("Args:", args);
 
   var unparsed = parser.parse(args);
   dashboard = parser.dashboard.value();
@@ -167,14 +167,14 @@ const cmdlineToParams = function(cmdlineOptions) {
   expiration = parser.expiration.value();
   secret = parser.secret.value();
 
-  console.log("dashboard:", dashboard);
-  console.log("sharingToken:", sharingToken);
-  console.log("expiration:", expiration);
-  console.log("secret:", secret);
+  //console.log("dashboard:", dashboard);
+  //console.log("sharingToken:", sharingToken);
+  //console.log("expiration:", expiration);
+  //console.log("secret:", secret);
   // Special filters handling:
   occurences = parser.filter.count();
   
-  console.log("Occurences:", occurences)
+  //console.log("Occurences:", occurences)
   if (occurences >= 2) {
     filters = filterArgsToArray(parser.filter.getopt());
   } else if (occurences == 1) {
@@ -218,7 +218,7 @@ const cluvioCommandToUrl = function(cmdlineOptions, drillThroughFilters) {
   // Instead of a string split by space, we consider anything inside double quotes a single arg
   let args = parseArgsToArray(cmdlineOptions);
 
-  console.log("Args:", args);
+  //console.log("Args:", args);
   var unparsed = parser.parse(args);
   dashboard = parser.dashboard.value();
   sharingToken = parser.token.value();
@@ -230,7 +230,7 @@ const cluvioCommandToUrl = function(cmdlineOptions, drillThroughFilters) {
 
   // Special filters handling:
   occurences = parser.filter.count();
-  console.log("Occurences:", occurences)
+  //console.log("Occurences:", occurences)
   if (occurences >= 2) {
     filters = filterArgsToArray(parser.filter.getopt());
   } else if (occurences == 1) {
@@ -241,12 +241,11 @@ const cluvioCommandToUrl = function(cmdlineOptions, drillThroughFilters) {
     filters = []; // Empty array.
   }
 
-  console.log("dashboard:", dashboard);
-  console.log("sharingToken:", sharingToken);
-  console.log("expiration:", expiration);
-  console.log("secret:", secret);
-  console.log("enableDrillEvents:", filters);
-  console.log("filters:", filters);
+  //console.log("dashboard:", dashboard);
+  //console.log("sharingToken:", sharingToken);
+  //console.log("expiration:", expiration);
+  //console.log("secret:", secret);
+  //console.log("filters:", filters);
   
   // Handle case of drillthrough dashboards with extra filters passed during DT.
   if (drillThroughFilters && drillThroughFilters.length > 0) {
@@ -403,7 +402,7 @@ exports.create_get_user_info = function(req, res, next) {
 
 // Create new org, with / without dashboard params
 const createOrg = function(org) {
-  console.log("creating new organization:", org);
+  //console.log("creating new organization:", org);
   return db.collection("orgs").add(org).then(orgRef => {
    return db.collection("orgs").doc(orgRef.id).get();
   }).catch(err => {
@@ -511,7 +510,7 @@ exports.delete_org = function(req, res, next) {
 
   if (id) {
     return db.collection('orgs').doc(id).delete().then(deleted => {
-      console.log("Success deleting organization.")
+      //console.log("Success deleting organization.")
       res.status(200).send({ msg: "Success deleting organization: ", id });
     }).catch(err => {
       res.status(500).send({ error: "Internal database error deleting organization: " + err });
@@ -607,14 +606,11 @@ exports.generateDrillThroughUrl = function(req, res, next) {
         // Extract the cmdline parameters first for parent
         if (cmdline) {
           //params = cmdlineToParams(cmdline);
-          console.log("params:", req.body.params);
-          console.log("req.body:", req.body);
           dtFilters = dtFilterParamsToFilters(req.body.params); // Already comes from drillThrough event msg of cluvio
-          console.log("Initial filters for DThrough:", dtFilters);
+          console.log("DThrough passed filters:", dtFilters);
           // Now convert to url, however using filters and dashboard name for drill-through, but using the
           // expiration / secret / sharingToken from the original dashboard
            drillThroughUrl = cluvioCommandToUrl(cmdline, dtFilters);
-           console.log("Drillthrough url:", drillThroughUrl);
            res.status(200).send({ url: drillThroughUrl });
         } else {
           res.status(500).send({ error: "Unexpectedly, no commandline string found for the drillthrough dashboard.\n"})
@@ -631,7 +627,6 @@ exports.refreshDashboardUrl = function(req, res, next) {
   let orgId = req.params.orgId;
   let dashSlug = req.body.dashname;
 
-  console.log("Refresh url called\n")
   return getOrgById(orgId).then(org => {
     if (!org) {
       res.status(404).send({ error: "No such organization found. " });
