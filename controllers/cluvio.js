@@ -532,6 +532,7 @@ const dtFilterParamsToFilters = function(params) {
   let filters = [];
   let filtersFirst = params.filters; // First set of filters passed
   let key, val, str;
+  console.log("params:", params);
   // Convert separated key value into a key:val format string:
   // TODO: What happens if multiple values per key?
   for (let i = 0; i < filtersFirst.length; i++) {
