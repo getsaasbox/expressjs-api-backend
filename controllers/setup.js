@@ -18,18 +18,12 @@ const jwt_secret = config.jwt_secret;
 
 const admin = require("firebase-admin");
 
-let serviceAccount;
-
 // Cloud firestore key file.
-if (process.env.NODE_ENV == "production")
-	serviceAccount = require("/etc/secrets/imagefix-firestore-keys.json");
-else if (process.env.NODE_ENV == "development")
-	serviceAccount = require("../config/imagefix-firestore-keys.json");
-
+let serviceAccount = require(config.firestoreSecretPath);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://imagefix-8377c.firebaseio.com"
+  databaseURL: config.firestoreDbAddr
 });
 
 const db = admin.firestore();

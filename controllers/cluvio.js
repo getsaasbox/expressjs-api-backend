@@ -14,8 +14,7 @@ const { doc, setDoc, collection, getDocs } = require("firebase/firestore");
 
 const crypto = require("crypto");
 
-// FIXME: add JWT secret.
-const jwt_secret = process.env.cluvio_app_jwt_secret;
+const jwt_secret = process.env.saasbox_jwt_secret;
 
 const jwtTokenData = function(req, res, next) {
 	const token = req.header('Authorization').replace('Bearer', '').trim();
