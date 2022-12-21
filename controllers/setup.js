@@ -23,7 +23,7 @@ let serviceAccount = require(config.firestoreSecretPath);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: config.firestoreDbAddr
+  databaseURL: process.env.firestoreDbAddr
 });
 
 const db = admin.firestore();
