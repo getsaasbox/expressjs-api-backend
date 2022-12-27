@@ -29,7 +29,6 @@ router.post("/request-invalidation", jsassets.request_cdn_invalidate);
 // For this customer, return their submitted domain.
 // For this customer, return the latest deploy link.
 router.post("/create-get-user", jsassets.create_get_user_info);
-
 router.post("/save-script-template", jsassets.save_script_template);
 
 // Get domain for customer.
@@ -41,7 +40,7 @@ router.post("/check-customer-license", jsassets.check_customer_license);
 
 /*** Cluvio DACO ***/
 router.post("/daco-create-get-user", cluvio.create_get_user_info);
-
+router.post("/update-user-preference/:userId", cluvio.update_user_pref);  // Only used for updating user's dashboard group selection.
 // Edit dashboard parameters for a single org, single dashboard:
 router.post("/app/orgs/create", cluvio.create_org);
 router.post("/app/orgs/:orgId/save", cluvio.edit_org);

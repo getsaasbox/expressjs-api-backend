@@ -342,6 +342,39 @@ const createNewUserDocReturnExisting = async function(req, res, next, user_info)
   });
 }
 
+exports.update_user_pref = function(req, res, next) {
+let user_info = jwtTokenData(req, res, next);
+  let user_data = {};
+  let orgs;
+  let orgsRef;
+  let group = req.body.group;
+
+  console.log("User_info:", user_info);
+
+  // FIXME: Get the current org from orgs:
+  return getOrgByDomain(getUserEmailDomain(user_info.email)).then(org => {
+    if (!org) {
+      res.send({ error: "Organization does not exist. Please contact your administrator."});
+    } else {
+      let is_admin = false;
+      let user_data = {};
+
+      return db.collection('daco-users').doc(user_info.id).get().then(user => {
+        if (!user.exists) {
+          res.send({ error: "User does not exist. Please contact your administrator."});
+        } else {
+          return db.collection('daco-users').doc(user_info.id).set({
+            group: group
+          }).then(userRef => {
+            res.status(200).send({ msg: "Successfully set user's group to " + group })
+          }).catch(err => {
+            return { error: "Failed to update user in Firestore.\n" + err }
+          });
+        }
+      });
+    }
+}
+
 //
 // On page load for admin or regular user
 // creates the user if it didnt exist.
@@ -367,6 +400,7 @@ exports.create_get_user_info = function(req, res, next) {
           } else {
             //console.log("User data:", user.data())
             // Common to both admin and user:
+            user_data.id = user_info.id;
             user_data.is_admin = user.data().is_admin;
             user_data.email = user.data().email;
             // Also fetch per-client-domain specific dashboard data for admin user
