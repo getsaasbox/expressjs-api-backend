@@ -373,6 +373,7 @@ let user_info = jwtTokenData(req, res, next);
         }
       });
     }
+  })
 }
 
 //
