@@ -40,7 +40,7 @@ router.post("/check-customer-license", jsassets.check_customer_license);
 
 /*** Cluvio DACO ***/
 router.post("/daco-create-get-user", cluvio.create_get_user_info);
-router.post("/update-user-preference/:userId", cluvio.update_user_pref);  // Only used for updating user's dashboard group selection.
+router.post("/set-user-group", cluvio.set_user_group);
 // Edit dashboard parameters for a single org, single dashboard:
 router.post("/app/orgs/create", cluvio.create_org);
 router.post("/app/orgs/:orgId/save", cluvio.edit_org);

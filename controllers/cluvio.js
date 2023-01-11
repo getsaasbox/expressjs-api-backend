@@ -342,7 +342,7 @@ const createNewUserDocReturnExisting = async function(req, res, next, user_info)
   });
 }
 
-exports.update_user_pref = function(req, res, next) {
+exports.set_user_group = function(req, res, next) {
 let user_info = jwtTokenData(req, res, next);
   let user_data = {};
   let orgs;
