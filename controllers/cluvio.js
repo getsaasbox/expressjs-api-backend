@@ -363,12 +363,13 @@ let user_info = jwtTokenData(req, res, next);
         if (!user.exists) {
           res.send({ error: "User does not exist. Please contact your administrator."});
         } else {
+          console.log("Setting the user" + user_info.id + " group to ", group);
           return db.collection('daco-users').doc(user_info.id).set({
             group: group
           }).then(userRef => {
             res.status(200).send({ msg: "Successfully set user's group to " + group })
           }).catch(err => {
-            return { error: "Failed to update user in Firestore.\n" + err }
+            res.status(500).send({ error: "Failed to update user in Firestore.\n" + err });
           });
         }
       });
