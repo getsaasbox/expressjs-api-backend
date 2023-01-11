@@ -327,7 +327,7 @@ const createNewUserDocReturnExisting = async function(req, res, next, user_info)
           return db.collection('daco-users').doc(user_info.id).set({
             email: user_info.email,
             is_admin: user_info.is_admin,
-          }).then(userRef => {
+          }, { merge: true }).then(userRef => {
             // Return updated user
             return db.collection('daco-users').doc(user_info.id).get();
           }).catch(err => {
@@ -404,6 +404,9 @@ exports.create_get_user_info = function(req, res, next) {
             user_data.id = user_info.id;
             user_data.is_admin = user.data().is_admin;
             user_data.email = user.data().email;
+            if (user.data().group) {
+              user_data.group = user.data().group;
+            }
             // Also fetch per-client-domain specific dashboard data for admin user
             if (user.data().is_admin == true) {
               orgsRef = db.collection("orgs");
