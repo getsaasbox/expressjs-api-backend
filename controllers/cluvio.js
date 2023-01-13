@@ -728,6 +728,8 @@ exports.edit_org_all_dashboards = function(req, res, next) {
     if (err) {
       res.status(421).send({ error: err })
     } else {
+      // FIXME: Workaround to the fact that save/reload loads all in reverse. Find out why.
+      dashboards.reverse();
       org = { dashboards };
 
       if (user_info.is_admin != true) {
