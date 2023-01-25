@@ -665,26 +665,29 @@ exports.generateDrillThroughUrl = function(req, res, next) {
 exports.refreshDashboardUrl = function(req, res, next) {
   let orgId = req.params.orgId;
   let dashSlug = req.body.dashname;
-
+  let group = req.body.group;
   return getOrgById(orgId).then(org => {
     if (!org) {
       res.status(404).send({ error: "No such organization found. " });
     } else {
       for (let i = 0; i < org.dashboards.length; i++) {
         if (org.dashboards[i].name == dashSlug) {
-          let urlOrError = cluvioCommandToUrl(org.dashboards[i].cmdline, []);
-          if (urlOrError.url) {
-            org.dashboards[i].url = urlOrError.url;
-            return updateOrg(org.id, org).then(updated => {
-              // Success scenario
-              res.send({ url: org.dashboards[i].url });
-            }).catch(err => {
-              res.status(500).send({ error: "Dashboard found and URL refreshed, but failed updating the organization. Please try again.\n"});
-            });
-          } else {
-            console.log("Error:", urlOrError.error);
-            res.status(500).send({ error: "Dashboard found, but error refreshing the url for dashboard: " + urlOrError.error })
-            break;
+          // Either there is no group, or there is, and group selection matches
+          if (!group || (group && org.dashboards[i].group == group)) {
+            let urlOrError = cluvioCommandToUrl(org.dashboards[i].cmdline, []);
+            if (urlOrError.url) {
+              org.dashboards[i].url = urlOrError.url;
+              return updateOrg(org.id, org).then(updated => {
+                // Success scenario
+                res.send({ url: org.dashboards[i].url });
+              }).catch(err => {
+                res.status(500).send({ error: "Dashboard found and URL refreshed, but failed updating the organization. Please try again.\n"});
+              });
+            } else {
+              console.log("Error:", urlOrError.error);
+              res.status(500).send({ error: "Dashboard found, but error refreshing the url for dashboard: " + urlOrError.error })
+              break;
+            }
           }
         }
       }
