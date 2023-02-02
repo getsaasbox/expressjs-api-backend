@@ -379,11 +379,14 @@ let user_info = jwtTokenData(req, res, next);
 // Calculate elevio email hash
 const getElevioHash = function(req, res, next, email) {
   const elevioSecret = process.env.elevioSecret;
-  const hmac = crypto.crateHmac("sha256", elevioSecret);
-
-  hmac.update(email);
-
-  return hmac.digest("hex");
+  
+  if (elevioSecret) {
+    const hmac = crypto.createHmac("sha256", elevioSecret);
+    hmac.update(email);
+    return hmac.digest("hex");
+  else {
+    return null;
+  }
 }
 
 //
