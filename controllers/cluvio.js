@@ -384,7 +384,7 @@ const getElevioHash = function(req, res, next, email) {
     const hmac = crypto.createHmac("sha256", elevioSecret);
     hmac.update(email);
     return hmac.digest("hex");
-  else {
+  } else {
     return null;
   }
 }
