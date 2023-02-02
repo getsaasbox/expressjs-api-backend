@@ -376,6 +376,16 @@ let user_info = jwtTokenData(req, res, next);
   })
 }
 
+// Calculate elevio email hash
+const getElevioHash = function(req, res, next, email) {
+  const elevioSecret = process.env.elevioSecret;
+  const hmac = crypto.crateHmac("sha256", elevioSecret);
+
+  hmac.update(email);
+
+  return hmac.digest("hex");
+}
+
 //
 // On page load for admin or regular user
 // creates the user if it didnt exist.
@@ -404,6 +414,7 @@ exports.create_get_user_info = function(req, res, next) {
             user_data.id = user_info.id;
             user_data.is_admin = user.data().is_admin;
             user_data.email = user.data().email;
+            user_data.hash = getElevioHash(req, res, next, user.data().email);
             if (user.data().group) {
               user_data.group = user.data().group;
             }
