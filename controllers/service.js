@@ -1,17 +1,25 @@
 
 
 const env = process.env.NODE_ENV || "development";
-const { isEmpty, merge } = require('lodash');
-const validator = require('validator');
 const config = require('../config/cloud.js')[env];
-
-const AWS = require('aws-sdk')
 
 const jwt = require('jsonwebtoken');
 
 const jwt_secret = config.jwt_secret;
 
 const { db } = require("./setup");
+
+// Middleware to enforce user has admin privileges by checking the JWT token.
+exports.hasAdmin = function(req, res, next) {
+  let user_info = jwtTokenData(req, res, next);
+  if (user_info.is_admin != true) {
+    res.status(403).send({ error: "Error: Forbidden. Not an admin."})
+  } else {
+    // add user info:
+    req.user_info = user_info;
+    next();
+  }
+}
 
 const jwtTokenData = function(req, res, next) {
 	const token = req.header('Authorization').replace('Bearer', '').trim();
@@ -21,23 +29,44 @@ const jwtTokenData = function(req, res, next) {
 	return decoded;
 }
 
+// Creates new user if it doesnt exist, returns user data.
+const createNewUserDocReturnExisting = async function(req, res, next, user_info) {
+  let is_admin = false;
+  let user_data = {};
 
-exports.fetch_optimization_records = function(req, res, next) {
-	let user_info = jwtTokenData(req, res, next);
-
-	let historiesRef = db.collection('users').doc(user_info.id).collection('history');
-
-	//return historiesRef.orderBy('createdAt', 'desc').limit(10).get()
-	return historiesRef.limit(10).get().then(histories => {
-
-		let opRecords = [];
-
-		histories.forEach(snap => {
-			opRecords.push(snap.data());
-		})
-		//console.log("Last few operational records:", opRecords);
-		res.status(200).send({opRecords});
-	}).catch(err => {
-		console.log("Error fetching image optimization op records. Error: \n", err);
-	});
+  return db.collection('daco-users').doc(user_info.id).get().then(user => {
+    if (!user.exists) {
+	  // Create the user as admin if that is true.
+	  if (user_info.is_admin == true) {
+	    is_admin = true;
+	  }
+	  return db.collection('users').doc(user_info.id).set({
+	    email: user_info.email,
+	    is_admin: is_admin,
+	  }).then(userRef => {
+	    return db.collection('users').doc(user_info.id).get();
+	  }).catch(err => {
+	    return { error: "Failed to create user in Firestore.\n" + err }
+	  });
+    } else {
+      // User exists, but update if any fields have changed (e.g. admin status)
+      return db.collection('users').doc(user_info.id).get().then(user=> {
+        if (user.data().is_admin != user_info.is_admin) {
+          // Sync user status in database:
+          return db.collection('users').doc(user_info.id).set({
+            email: user_info.email,
+            is_admin: user_info.is_admin,
+          }, { merge: true }).then(userRef => {
+            // Return updated user
+            return db.collection('users').doc(user_info.id).get();
+          }).catch(err => {
+            return { error: "Failed to update user in Firestore.\n" + err }
+          });
+        } else {
+          // no changes, return user as is:
+          return user;
+        }
+      });
+    }
+  });
 }
