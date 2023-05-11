@@ -5,7 +5,8 @@ const config = require('../config/cloud.js')[env];
 
 const jwt = require('jsonwebtoken');
 
-const jwt_secret = config.jwt_secret;
+const jwt_secret = process.env.saasbox_jwt_secret;
+const crypto = require("crypto");
 
 const { db } = require("./dbsetup");
 const { doc, setDoc, collection, getDocs } = require("firebase/firestore");

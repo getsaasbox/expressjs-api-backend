@@ -6,7 +6,7 @@ const admin = require("firebase-admin");
 
 const AWS = require('aws-sdk')
 
-const { db } = require("./setup");
+const { db } = require("./dbsetup");
 
 const jwt = require('jsonwebtoken');
 
@@ -297,7 +297,7 @@ const fetchUsersOrg = function(req, res, next, user_info) {
 
 // Creates new user if it doesnt exist, returns user data.
 const createNewUserDocReturnExisting = async function(req, res, next, user_info) {
-  let is_admin = false;
+  let is_admin = fale;
   let user_data = {};
 
   return db.collection('daco-users').doc(user_info.id).get().then(user => {
