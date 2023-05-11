@@ -3,6 +3,8 @@
 /* This API is used to set up the SaaS */
 const env = process.env.NODE_ENV || "development";
 
+const config = require('../config/cloud.js')[env];
+
 const admin = require("firebase-admin");
 
 // Cloud firestore key file.
