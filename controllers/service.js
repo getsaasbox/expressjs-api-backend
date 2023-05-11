@@ -7,7 +7,9 @@ const jwt = require('jsonwebtoken');
 
 const jwt_secret = config.jwt_secret;
 
-const { db } = require("./setup");
+const { db } = require("./dbsetup");
+const { doc, setDoc, collection, getDocs } = require("firebase/firestore");
+
 
 // Middleware to enforce user has admin privileges by checking the JWT token.
 exports.hasAdmin = function(req, res, next) {
