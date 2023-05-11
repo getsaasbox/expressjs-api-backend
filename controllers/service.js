@@ -37,7 +37,7 @@ const createNewUserDocReturnExisting = async function(req, res, next, user_info)
   let is_admin = false;
   let user_data = {};
 
-  return db.collection('daco-users').doc(user_info.id).get().then(user => {
+  return db.collection('users').doc(user_info.id).get().then(user => {
     if (!user.exists) {
 	  // Create the user as admin if that is true.
 	  if (user_info.is_admin == true) {
@@ -72,4 +72,19 @@ const createNewUserDocReturnExisting = async function(req, res, next, user_info)
       });
     }
   });
+}
+
+exports.create_get_user_info = async function(req, res, next) {
+	let user_info = jwtTokenData(req, res, next);
+  	let user_data = {};
+  	let user = await createNewUserDocReturnExisting(req, res ,next, user_info);
+  	if (user.error) {
+        res.send(user.error)
+    } else {
+    	// Build user structure
+    	user_data.id = user_info.id;
+        user_data.is_admin = user.data().is_admin;
+        user_data.email = user.data().email;
+  		res.send({ user_data} );
+  	}
 }
